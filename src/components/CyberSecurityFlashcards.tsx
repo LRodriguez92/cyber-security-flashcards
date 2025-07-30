@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle, BookOpen, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle, BookOpen, Target, Shuffle } from 'lucide-react';
 
 const CyberSecurityFlashcards = () => {
   const flashcards = [
@@ -186,6 +186,10 @@ const CyberSecurityFlashcards = () => {
   // New state for Review by Confidence mode
   const [currentMode, setCurrentMode] = useState<'study' | 'review'>('study');
   const [selectedConfidenceCategories, setSelectedConfidenceCategories] = useState<string[]>([]);
+  
+  // New state for shuffle functionality
+  const [isShuffled, setIsShuffled] = useState(false);
+  const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
 
   const domains = [
     { id: 'all', name: 'All Domains', color: 'gray', domainNumber: '' },
@@ -223,6 +227,35 @@ const CyberSecurityFlashcards = () => {
   };
 
   const filteredCards = getFilteredCards();
+
+  // Shuffle function
+  const shuffleCards = () => {
+    if (isShuffled) {
+      // Turn off shuffle - return to original order
+      setIsShuffled(false);
+      setShuffledIndices([]);
+    } else {
+      // Turn on shuffle - create shuffled indices
+      const indices = Array.from({ length: filteredCards.length }, (_, i) => i);
+      const shuffled = [...indices].sort(() => Math.random() - 0.5);
+      setShuffledIndices(shuffled);
+      setIsShuffled(true);
+    }
+    setCurrentCard(0);
+    setIsFlipped(false);
+    setAnswered(false);
+  };
+
+  // Get current card data considering shuffle
+  const getCurrentCardData = () => {
+    if (isShuffled && shuffledIndices.length > 0) {
+      const originalIndex = shuffledIndices[currentCard];
+      return filteredCards[originalIndex];
+    }
+    return filteredCards[currentCard];
+  };
+
+  const currentCardData = getCurrentCardData();
 
   const nextCard = () => {
     if (currentCard < filteredCards.length - 1) {
@@ -288,6 +321,8 @@ const CyberSecurityFlashcards = () => {
     });
     setCurrentMode('study');
     setSelectedConfidenceCategories([]);
+    setIsShuffled(false);
+    setShuffledIndices([]);
   };
 
   const handleDomainChange = (domainId: string) => {
@@ -312,6 +347,8 @@ const CyberSecurityFlashcards = () => {
     setCurrentCard(0);
     setIsFlipped(false);
     setAnswered(false);
+    setIsShuffled(false);
+    setShuffledIndices([]);
   };
 
   const handleConfidenceCategoryChange = (categoryId: string) => {
@@ -325,6 +362,8 @@ const CyberSecurityFlashcards = () => {
     setCurrentCard(0);
     setIsFlipped(false);
     setAnswered(false);
+    setIsShuffled(false);
+    setShuffledIndices([]);
   };
 
   const switchMode = (mode: 'study' | 'review') => {
@@ -332,6 +371,8 @@ const CyberSecurityFlashcards = () => {
     setCurrentCard(0);
     setIsFlipped(false);
     setAnswered(false);
+    setIsShuffled(false);
+    setShuffledIndices([]);
     if (mode === 'study') {
       setSelectedConfidenceCategories([]);
     }
@@ -369,7 +410,6 @@ const CyberSecurityFlashcards = () => {
   };
 
   const progress = filteredCards.length > 0 ? ((currentCard + 1) / filteredCards.length) * 100 : 0;
-  const currentCardData = filteredCards[currentCard];
   const cardColors = getCardColors(currentCardData?.color);
 
   return (
@@ -529,6 +569,19 @@ const CyberSecurityFlashcards = () => {
         {/* Flashcard */}
         {filteredCards.length > 0 ? (
           <div className="relative mb-8">
+            {/* Shuffle Button - Top Right Corner */}
+            <button
+              onClick={shuffleCards}
+              className={`absolute top-4 right-4 z-10 p-2 rounded-full transition-all ${
+                isShuffled
+                  ? 'bg-orange-600 text-white shadow-lg scale-110 ring-2 ring-orange-400'
+                  : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600/80 hover:scale-110'
+              }`}
+              title={isShuffled ? "Turn off shuffle" : "Shuffle cards"}
+            >
+              <Shuffle className="w-5 h-5" />
+            </button>
+            
             <div 
               className={`relative w-full h-96 cursor-pointer transition-transform duration-700 transform-gpu ${
                 isFlipped ? 'rotate-y-180' : ''
