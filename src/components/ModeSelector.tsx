@@ -10,7 +10,6 @@ interface ModeSelectorProps {
 const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onModeChange }) => {
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-white mb-4">Select Mode:</h2>
       <div className="flex gap-4 justify-center">
         <button
           onClick={() => onModeChange('study')}

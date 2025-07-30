@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shuffle } from 'lucide-react';
+import { Shuffle, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Flashcard as FlashcardType } from '../types/flashcard';
 import { getCardColors } from '../utils/colorUtils';
 
@@ -11,6 +11,10 @@ interface FlashcardProps {
   onShuffle: () => void;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  currentCard: number;
+  totalCards: number;
 }
 
 const Flashcard: React.FC<FlashcardProps> = ({ 
@@ -20,7 +24,11 @@ const Flashcard: React.FC<FlashcardProps> = ({
   onFlip, 
   onShuffle,
   onSwipeLeft,
-  onSwipeRight 
+  onSwipeRight,
+  onPrev,
+  onNext,
+  currentCard,
+  totalCards
 }) => {
   const cardColors = getCardColors(card.color);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -67,6 +75,38 @@ const Flashcard: React.FC<FlashcardProps> = ({
       >
         <Shuffle className="w-5 h-5" />
       </button>
+
+      {/* Previous Button - Left Side */}
+      {onPrev && (
+        <button
+          onClick={onPrev}
+          disabled={currentCard === 0 || totalCards === 0}
+          className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+            currentCard === 0 || totalCards === 0
+              ? 'bg-slate-800/50 text-slate-500 cursor-not-allowed'
+              : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600/80 hover:scale-110 active:scale-95'
+          }`}
+          aria-label="Go to previous card"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* Next Button - Right Side */}
+      {onNext && (
+        <button
+          onClick={onNext}
+          disabled={currentCard === totalCards - 1 || totalCards === 0}
+          className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+            currentCard === totalCards - 1 || totalCards === 0
+              ? 'bg-slate-800/50 text-slate-500 cursor-not-allowed'
+              : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600/80 hover:scale-110 active:scale-95'
+          }`}
+          aria-label="Go to next card"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      )}
       
       <div 
         className={`relative w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 cursor-pointer transition-transform duration-700 transform-gpu focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 ${

@@ -116,13 +116,14 @@ const CyberSecurityFlashcards: React.FC = () => {
           </div>
         </div>
 
+
+        <ScoreDisplay confidenceTracking={confidenceTracking} />
+
         <ProgressBar 
           currentCard={currentCard}
           totalCards={filteredCards.length}
         />
-
-        <ScoreDisplay confidenceTracking={confidenceTracking} />
-
+        
         {/* Flashcard or Empty State */}
         {filteredCards.length > 0 ? (
           <>
@@ -134,6 +135,10 @@ const CyberSecurityFlashcards: React.FC = () => {
               onShuffle={handleShuffle}
               onSwipeLeft={nextCard}
               onSwipeRight={prevCard}
+              onPrev={prevCard}
+              onNext={nextCard}
+              currentCard={currentCard}
+              totalCards={filteredCards.length}
             />
 
             {/* Confidence Buttons - Only show in study mode */}
@@ -148,13 +153,7 @@ const CyberSecurityFlashcards: React.FC = () => {
           <EmptyState currentMode={currentMode} />
         )}
 
-        <Navigation
-          currentCard={currentCard}
-          totalCards={filteredCards.length}
-          onPrev={prevCard}
-          onNext={nextCard}
-          onReset={resetState}
-        />
+        <Navigation onReset={resetState} />
 
         {/* Completion Message */}
         {currentCard === filteredCards.length - 1 && answered && filteredCards.length > 0 && (
