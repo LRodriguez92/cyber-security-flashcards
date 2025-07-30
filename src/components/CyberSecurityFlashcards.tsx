@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle, BookOpen, Target } from 'lucide-react';
 
 const CyberSecurityFlashcards = () => {
   const flashcards = [
@@ -133,12 +133,21 @@ const CyberSecurityFlashcards = () => {
   const [score, setScore] = useState({ correct: 0, incorrect: 0 });
   const [answered, setAnswered] = useState(false);
   const [selectedDomains, setSelectedDomains] = useState(['all']);
-  const [confidenceTracking, setConfidenceTracking] = useState({
+  const [confidenceTracking, setConfidenceTracking] = useState<{
+    'knew-it': string[];
+    'quick-think': string[];
+    'long-think': string[];
+    'peeked': string[];
+  }>({
     'knew-it': [],
     'quick-think': [],
     'long-think': [],
     'peeked': []
   });
+  
+  // New state for Review by Confidence mode
+  const [currentMode, setCurrentMode] = useState<'study' | 'review'>('study');
+  const [selectedConfidenceCategories, setSelectedConfidenceCategories] = useState<string[]>([]);
 
   const domains = [
     { id: 'all', name: 'All Domains', color: 'gray' },
@@ -149,9 +158,33 @@ const CyberSecurityFlashcards = () => {
     { id: 'Program Management & Oversight', name: 'Program Management & Oversight', color: 'white' }
   ];
 
-  const filteredCards = selectedDomains.includes('all') 
-    ? flashcards 
-    : flashcards.filter(card => selectedDomains.includes(card.domain));
+  const confidenceCategories = [
+    { id: 'knew-it', name: 'Knew it right away', icon: '⚡', color: 'green' },
+    { id: 'quick-think', name: 'Had to think for a moment', icon: '🤔', color: 'blue' },
+    { id: 'long-think', name: 'Had to think for a while', icon: '🧠', color: 'yellow' },
+    { id: 'peeked', name: 'Peeked at the answer', icon: '👀', color: 'red' }
+  ];
+
+  // Get cards based on current mode
+  const getFilteredCards = () => {
+    const baseFiltered = selectedDomains.includes('all') 
+      ? flashcards 
+      : flashcards.filter(card => selectedDomains.includes(card.domain));
+
+    if (currentMode === 'review' && selectedConfidenceCategories.length > 0) {
+      // Filter cards that are in the selected confidence categories
+      return baseFiltered.filter((card, index) => {
+        const cardId = `${card.domain}-${index}`;
+        return selectedConfidenceCategories.some(category => 
+          confidenceTracking[category as 'knew-it' | 'quick-think' | 'long-think' | 'peeked'].includes(cardId)
+        );
+      });
+    }
+
+    return baseFiltered;
+  };
+
+  const filteredCards = getFilteredCards();
 
   const nextCard = () => {
     if (currentCard < filteredCards.length - 1) {
@@ -215,6 +248,8 @@ const CyberSecurityFlashcards = () => {
       'long-think': [],
       'peeked': []
     });
+    setCurrentMode('study');
+    setSelectedConfidenceCategories([]);
   };
 
   const handleDomainChange = (domainId: string) => {
@@ -239,6 +274,29 @@ const CyberSecurityFlashcards = () => {
     setCurrentCard(0);
     setIsFlipped(false);
     setAnswered(false);
+  };
+
+  const handleConfidenceCategoryChange = (categoryId: string) => {
+    setSelectedConfidenceCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+    setCurrentCard(0);
+    setIsFlipped(false);
+    setAnswered(false);
+  };
+
+  const switchMode = (mode: 'study' | 'review') => {
+    setCurrentMode(mode);
+    setCurrentCard(0);
+    setIsFlipped(false);
+    setAnswered(false);
+    if (mode === 'study') {
+      setSelectedConfidenceCategories([]);
+    }
   };
 
   const getCardColors = (color: string) => {
@@ -272,7 +330,7 @@ const CyberSecurityFlashcards = () => {
     return colorMap[color] || colorMap.blue;
   };
 
-  const progress = ((currentCard + 1) / filteredCards.length) * 100;
+  const progress = filteredCards.length > 0 ? ((currentCard + 1) / filteredCards.length) * 100 : 0;
   const currentCardData = filteredCards[currentCard];
   const cardColors = getCardColors(currentCardData?.color);
 
@@ -287,38 +345,105 @@ const CyberSecurityFlashcards = () => {
           <p className="text-blue-200">Test your knowledge of cybersecurity concepts</p>
         </div>
 
-        {/* Domain Filter */}
+        {/* Mode Selection */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-white mb-4">Select Domains to Study:</h2>
-          <div className="flex flex-wrap gap-2">
-            {domains.map(domain => (
-              <button
-                key={domain.id}
-                onClick={() => handleDomainChange(domain.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  selectedDomains.includes(domain.id)
-                    ? 'bg-blue-600 text-white shadow-lg scale-105 ring-2 ring-blue-400'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                <span className={`inline-block w-3 h-3 rounded-full mr-2 ${
-                  domain.color === 'blue' ? 'bg-blue-500' :
-                  domain.color === 'red' ? 'bg-red-500' :
-                  domain.color === 'green' ? 'bg-green-500' :
-                  domain.color === 'yellow' ? 'bg-yellow-500' :
-                  domain.color === 'white' ? 'bg-gray-300' :
-                  'bg-gray-500'
-                }`}></span>
-                {domain.name}
-              </button>
-            ))}
+          <h2 className="text-xl font-semibold text-white mb-4">Select Mode:</h2>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => switchMode('study')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                currentMode === 'study'
+                  ? 'bg-blue-600 text-white shadow-lg scale-105 ring-2 ring-blue-400'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              <BookOpen className="w-5 h-5" />
+              Study Mode
+            </button>
+            <button
+              onClick={() => switchMode('review')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                currentMode === 'review'
+                  ? 'bg-purple-600 text-white shadow-lg scale-105 ring-2 ring-purple-400'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              <Target className="w-5 h-5" />
+              Review by Confidence
+            </button>
           </div>
-          {selectedDomains.length > 1 && !selectedDomains.includes('all') && (
-            <p className="text-sm text-blue-300 mt-2">
-              Studying {selectedDomains.length} domains: {selectedDomains.join(', ')}
-            </p>
-          )}
         </div>
+
+        {/* Domain Filter - Only show in study mode */}
+        {currentMode === 'study' && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">Select Domains to Study:</h2>
+            <div className="flex flex-wrap gap-2">
+              {domains.map(domain => (
+                <button
+                  key={domain.id}
+                  onClick={() => handleDomainChange(domain.id)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    selectedDomains.includes(domain.id)
+                      ? 'bg-blue-600 text-white shadow-lg scale-105 ring-2 ring-blue-400'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  <span className={`inline-block w-3 h-3 rounded-full mr-2 ${
+                    domain.color === 'blue' ? 'bg-blue-500' :
+                    domain.color === 'red' ? 'bg-red-500' :
+                    domain.color === 'green' ? 'bg-green-500' :
+                    domain.color === 'yellow' ? 'bg-yellow-500' :
+                    domain.color === 'white' ? 'bg-gray-300' :
+                    'bg-gray-500'
+                  }`}></span>
+                  {domain.name}
+                </button>
+              ))}
+            </div>
+            {selectedDomains.length > 1 && !selectedDomains.includes('all') && (
+              <p className="text-sm text-blue-300 mt-2">
+                Studying {selectedDomains.length} domains: {selectedDomains.join(', ')}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Confidence Category Filter - Only show in review mode */}
+        {currentMode === 'review' && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">Select Confidence Categories to Review:</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {confidenceCategories.map(category => (
+                <button
+                  key={category.id}
+                  onClick={() => handleConfidenceCategoryChange(category.id)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg font-medium transition-all ${
+                    selectedConfidenceCategories.includes(category.id)
+                      ? `bg-${category.color}-600 text-white shadow-lg scale-105 ring-2 ring-${category.color}-400`
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  <span className="text-2xl">{category.icon}</span>
+                  <span className="text-sm text-center">{category.name}</span>
+                  <span className="text-xs opacity-75">
+                    ({confidenceTracking[category.id as keyof typeof confidenceTracking].length} cards)
+                  </span>
+                </button>
+              ))}
+            </div>
+            {selectedConfidenceCategories.length === 0 && (
+              <p className="text-sm text-yellow-300 mt-2 text-center">
+                Please select at least one confidence category to review
+              </p>
+            )}
+            {selectedConfidenceCategories.length > 0 && (
+              <p className="text-sm text-purple-300 mt-2 text-center">
+                Reviewing {selectedConfidenceCategories.length} categor{selectedConfidenceCategories.length > 1 ? 'ies' : 'y'}: {selectedConfidenceCategories.map(id => confidenceCategories.find(c => c.id === id)?.name).join(', ')}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Progress Bar */}
         <div className="mb-6">
@@ -337,7 +462,6 @@ const CyberSecurityFlashcards = () => {
             ></div>
           </div>
         </div>
-
 
         {/* Score Display */}
         <div className="flex justify-center gap-3 mb-8 flex-wrap">
@@ -360,51 +484,66 @@ const CyberSecurityFlashcards = () => {
         </div>
 
         {/* Flashcard */}
-        <div className="relative mb-8">
-          <div 
-            className={`relative w-full h-96 cursor-pointer transition-transform duration-700 transform-gpu ${
-              isFlipped ? 'rotate-y-180' : ''
-            }`}
-            onClick={flipCard}
-            style={{ transformStyle: 'preserve-3d' }}
-          >
-            {/* Front of card */}
-            <div className={`absolute inset-0 w-full h-full backface-hidden bg-gradient-to-br ${cardColors.front} rounded-2xl border shadow-2xl`}>
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <div className="bg-white/20 p-3 rounded-full mb-4">
-                  <div className={`w-8 h-8 ${cardColors.accent} rounded-full flex items-center justify-center`}>
-                    <span className="text-white font-bold">?</span>
+        {filteredCards.length > 0 ? (
+          <div className="relative mb-8">
+            <div 
+              className={`relative w-full h-96 cursor-pointer transition-transform duration-700 transform-gpu ${
+                isFlipped ? 'rotate-y-180' : ''
+              }`}
+              onClick={flipCard}
+              style={{ transformStyle: 'preserve-3d' }}
+            >
+              {/* Front of card */}
+              <div className={`absolute inset-0 w-full h-full backface-hidden bg-gradient-to-br ${cardColors.front} rounded-2xl border shadow-2xl`}>
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                  <div className="bg-white/20 p-3 rounded-full mb-4">
+                    <div className={`w-8 h-8 ${cardColors.accent} rounded-full flex items-center justify-center`}>
+                      <span className="text-white font-bold">?</span>
+                    </div>
                   </div>
+                  <h2 className="text-2xl font-bold text-white mb-2">Question</h2>
+                  <p className="text-sm text-white/80 mb-4">{currentCardData?.domain}</p>
+                  <p className="text-xl text-white/90 leading-relaxed">
+                    {currentCardData?.question}
+                  </p>
+                  <p className="text-sm text-white/70 mt-6">Click to reveal answer</p>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Question</h2>
-                <p className="text-sm text-white/80 mb-4">{currentCardData?.domain}</p>
-                <p className="text-xl text-white/90 leading-relaxed">
-                  {currentCardData?.question}
-                </p>
-                <p className="text-sm text-white/70 mt-6">Click to reveal answer</p>
               </div>
-            </div>
 
-            {/* Back of card */}
-            <div className={`absolute inset-0 w-full h-full backface-hidden bg-gradient-to-br ${cardColors.back} rounded-2xl border shadow-2xl rotate-y-180`}>
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <div className="bg-white/20 p-3 rounded-full mb-4">
-                  <div className={`w-8 h-8 ${cardColors.accent} rounded-full flex items-center justify-center`}>
-                    <span className="text-white font-bold">!</span>
+              {/* Back of card */}
+              <div className={`absolute inset-0 w-full h-full backface-hidden bg-gradient-to-br ${cardColors.back} rounded-2xl border shadow-2xl rotate-y-180`}>
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                  <div className="bg-white/20 p-3 rounded-full mb-4">
+                    <div className={`w-8 h-8 ${cardColors.accent} rounded-full flex items-center justify-center`}>
+                      <span className="text-white font-bold">!</span>
+                    </div>
                   </div>
+                  <h2 className="text-2xl font-bold text-white mb-2">Answer</h2>
+                  <p className="text-sm text-white/80 mb-4">{currentCardData?.domain}</p>
+                  <p className="text-lg text-white/90 leading-relaxed">
+                    {currentCardData?.answer}
+                  </p>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Answer</h2>
-                <p className="text-sm text-white/80 mb-4">{currentCardData?.domain}</p>
-                <p className="text-lg text-white/90 leading-relaxed">
-                  {currentCardData?.answer}
-                </p>
               </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📚</div>
+            <h3 className="text-2xl font-bold text-white mb-2">
+              {currentMode === 'review' ? 'No cards to review' : 'No cards available'}
+            </h3>
+            <p className="text-blue-200">
+              {currentMode === 'review' 
+                ? 'Try selecting different confidence categories or study some cards first.'
+                : 'Try selecting different domains or switch to review mode.'
+              }
+            </p>
+          </div>
+        )}
 
-        {/* Confidence Buttons */}
-        {isFlipped && (
+        {/* Confidence Buttons - Only show in study mode */}
+        {currentMode === 'study' && isFlipped && filteredCards.length > 0 && (
           <div className="mb-8">
             <p className="text-center text-white mb-4 font-medium">How well did you know this?</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto">
@@ -467,7 +606,7 @@ const CyberSecurityFlashcards = () => {
         <div className="flex justify-between items-center">
           <button
             onClick={prevCard}
-            disabled={currentCard === 0}
+            disabled={currentCard === 0 || filteredCards.length === 0}
             className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg font-medium transition-all disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -484,7 +623,7 @@ const CyberSecurityFlashcards = () => {
 
           <button
             onClick={nextCard}
-            disabled={currentCard === filteredCards.length - 1}
+            disabled={currentCard === filteredCards.length - 1 || filteredCards.length === 0}
             className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg font-medium transition-all disabled:cursor-not-allowed"
           >
             Next
@@ -493,7 +632,7 @@ const CyberSecurityFlashcards = () => {
         </div>
 
         {/* Completion Message */}
-        {currentCard === filteredCards.length - 1 && answered && (
+        {currentCard === filteredCards.length - 1 && answered && filteredCards.length > 0 && (
           <div className="mt-8 text-center bg-gradient-to-r from-green-900/30 to-blue-900/30 p-6 rounded-xl border border-green-500/30">
             <h3 className="text-2xl font-bold text-white mb-4">Quiz Complete!</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -527,8 +666,6 @@ const CyberSecurityFlashcards = () => {
           </div>
         )}
       </div>
-
-
     </div>
   );
 };
