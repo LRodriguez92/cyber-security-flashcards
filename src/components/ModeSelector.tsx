@@ -9,29 +9,32 @@ interface ModeSelectorProps {
 
 const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onModeChange }) => {
   return (
-    <div className="mb-8">
-      <div className="flex gap-4 justify-center">
+    <div className="mb-2 sm:mb-4">
+      {/* Mobile: Stacked layout, Desktop: Side-by-side */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center">
         <button
           onClick={() => onModeChange('study')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+          className={`flex items-center justify-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all text-sm sm:text-base ${
             currentMode === 'study'
-              ? 'bg-blue-600 text-white shadow-lg scale-105 ring-2 ring-blue-400'
+              ? 'bg-blue-600 text-white shadow-lg scale-[1.02] ring-2 ring-blue-400'
               : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
           }`}
         >
-          <BookOpen className="w-5 h-5" />
-          Study Mode
+          <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="hidden sm:inline">Study Mode</span>
+          <span className="sm:hidden">Study</span>
         </button>
         <button
           onClick={() => onModeChange('review')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+          className={`flex items-center justify-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all text-sm sm:text-base ${
             currentMode === 'review'
-              ? 'bg-purple-600 text-white shadow-lg scale-105 ring-2 ring-purple-400'
+              ? 'bg-purple-600 text-white shadow-lg scale-[1.02] ring-2 ring-purple-400'
               : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
           }`}
         >
-          <Target className="w-5 h-5" />
-          Review by Confidence
+          <Target className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="hidden sm:inline">Review by Confidence</span>
+          <span className="sm:hidden">Review</span>
         </button>
       </div>
     </div>
