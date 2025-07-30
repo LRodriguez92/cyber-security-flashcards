@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Settings, ChevronDown } from 'lucide-react';
 import { useFlashcardState } from '../hooks/useFlashcardState';
+
 import { getFilteredCards } from '../utils/cardUtils';
 import { domains, confidenceCategories } from '../data/flashcards';
+
 
 // Import components
 import Header from './Header';
@@ -17,6 +20,8 @@ import CompletionMessage from './CompletionMessage';
 import EmptyState from './EmptyState';
 
 const CyberSecurityFlashcards: React.FC = () => {
+  const [showFilters, setShowFilters] = useState(false);
+  
   const {
     // State
     currentCard,
@@ -63,33 +68,53 @@ const CyberSecurityFlashcards: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 sm:p-6">
+
+      
       <div className="max-w-4xl mx-auto">
         <Header />
+
+
 
         <ModeSelector 
           currentMode={currentMode}
           onModeChange={switchMode}
         />
 
-        {/* Domain Filter - Only show in study mode */}
-        {currentMode === 'study' && (
-          <DomainFilter
-            domains={domains}
-            selectedDomains={selectedDomains}
-            onDomainChange={handleDomainChange}
-          />
-        )}
+        {/* Progressive Filter Disclosure */}
+        <div className="mb-6">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors w-full justify-center sm:justify-start focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-2"
+            aria-label={showFilters ? "Hide study options" : "Show study options"}
+            aria-expanded={showFilters}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Study Options</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+          </button>
+          
+          <div className={`mt-3 overflow-hidden transition-all duration-300 ${showFilters ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+            {/* Domain Filter - Only show in study mode */}
+            {currentMode === 'study' && (
+              <DomainFilter
+                domains={domains}
+                selectedDomains={selectedDomains}
+                onDomainChange={handleDomainChange}
+              />
+            )}
 
-        {/* Confidence Category Filter - Only show in review mode */}
-        {currentMode === 'review' && (
-          <ConfidenceFilter
-            confidenceCategories={confidenceCategories}
-            selectedConfidenceCategories={selectedConfidenceCategories}
-            confidenceTracking={confidenceTracking}
-            onConfidenceCategoryChange={handleConfidenceCategoryChange}
-          />
-        )}
+            {/* Confidence Category Filter - Only show in review mode */}
+            {currentMode === 'review' && (
+              <ConfidenceFilter
+                confidenceCategories={confidenceCategories}
+                selectedConfidenceCategories={selectedConfidenceCategories}
+                confidenceTracking={confidenceTracking}
+                onConfidenceCategoryChange={handleConfidenceCategoryChange}
+              />
+            )}
+          </div>
+        </div>
 
         <ProgressBar 
           currentCard={currentCard}
@@ -107,6 +132,8 @@ const CyberSecurityFlashcards: React.FC = () => {
               isShuffled={isShuffled}
               onFlip={flipCard}
               onShuffle={handleShuffle}
+              onSwipeLeft={nextCard}
+              onSwipeRight={prevCard}
             />
 
             {/* Confidence Buttons - Only show in study mode */}
