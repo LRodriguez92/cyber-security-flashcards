@@ -19,6 +19,9 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  /* Mobile viewport handling */
+  min-height: 100dvh; /* dynamic viewport height for mobile browsers */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 /* Custom styles for the flashcard flip animation */
@@ -28,4 +31,18 @@ body {
 
 .rotate-y-180 {
   transform: rotateY(180deg);
+}
+
+/* Mobile viewport utilities */
+@supports (height: 100dvh) {
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+}
+
+/* Ensure content doesn't get cut off on mobile */
+@media (max-width: 640px) {
+  .mobile-safe-padding {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
 }

@@ -11,8 +11,7 @@ import Header from './Header';
 import ModeSelector from './ModeSelector';
 import DomainFilter from './DomainFilter';
 import ConfidenceFilter from './ConfidenceFilter';
-import ProgressBar from './ProgressBar';
-import ScoreDisplay from './ScoreDisplay';
+
 import Flashcard from './Flashcard';
 import ConfidenceButtons from './ConfidenceButtons';
 import Navigation from './Navigation';
@@ -77,7 +76,7 @@ const CyberSecurityFlashcards: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 sm:p-6">
+    <div className="min-h-screen min-h-dvh bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-3 sm:p-4 lg:p-6 mobile-safe-padding">
 
       
       <div className="max-w-4xl mx-auto">
@@ -207,7 +206,10 @@ const CyberSecurityFlashcards: React.FC = () => {
 
         {/* Completion Message */}
         {currentCard === filteredCards.length - 1 && answered && filteredCards.length > 0 && (
-          <CompletionMessage />
+          <CompletionMessage 
+            confidenceTracking={confidenceTracking}
+            totalCards={filteredCards.length}
+          />
         )}
       </div>
     </div>
