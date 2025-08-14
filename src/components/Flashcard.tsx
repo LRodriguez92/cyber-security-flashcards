@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import type { PanInfo } from 'framer-motion';
 import { Shuffle, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Flashcard as FlashcardType } from '../types/flashcard';
 import { getCardColors } from '../utils/colorUtils';
 
 interface FlashcardProps {
   card: FlashcardType;
+  nextCard?: FlashcardType;
   isFlipped: boolean;
   isShuffled: boolean;
   onFlip: () => void;
@@ -19,6 +22,7 @@ interface FlashcardProps {
 
 const Flashcard: React.FC<FlashcardProps> = ({ 
   card, 
+  nextCard,
   isFlipped, 
   isShuffled, 
   onFlip, 
@@ -31,37 +35,79 @@ const Flashcard: React.FC<FlashcardProps> = ({
   totalCards
 }) => {
   const cardColors = getCardColors(card.color);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const nextCardColors = nextCard ? getCardColors(nextCard.color) : null;
 
-  const minSwipeDistance = 50;
+  const [isSwiping, setIsSwiping] = useState(false);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
 
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const swipeThreshold = 100;
     
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe && onSwipeLeft) {
-      onSwipeLeft();
-    }
-    if (isRightSwipe && onSwipeRight) {
-      onSwipeRight();
+    if (info.offset.x > swipeThreshold && onSwipeRight) {
+      setIsSwiping(true);
+      setSwipeDirection('right');
+      // Let the card swipe off screen completely before navigating
+      setTimeout(() => {
+        // Reset state BEFORE navigation to prevent animation conflicts
+        setIsSwiping(false);
+        setSwipeDirection(null);
+        // Small delay to ensure state is reset before navigation
+        setTimeout(() => {
+          onSwipeRight();
+        }, 50);
+      }, 300);
+    } else if (info.offset.x < -swipeThreshold && onSwipeLeft) {
+      setIsSwiping(true);
+      setSwipeDirection('left');
+      // Let the card swipe off screen completely before navigating
+      setTimeout(() => {
+        // Reset state BEFORE navigation to prevent animation conflicts
+        setIsSwiping(false);
+        setSwipeDirection(null);
+        // Small delay to ensure state is reset before navigation
+        setTimeout(() => {
+          onSwipeLeft();
+        }, 50);
+      }, 300);
     }
   };
 
   return (
     <div className="relative mb-8">
+             {/* Stacked Card Effect - Background Cards */}
+       <div className="absolute inset-0 transform translate-y-2 translate-x-1">
+         <div className="w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 bg-gradient-to-br from-slate-600 to-slate-800 rounded-2xl border border-slate-500/30 shadow-lg opacity-60"></div>
+       </div>
+       <div className="absolute inset-0 transform translate-y-1 translate-x-0.5">
+         <div className="w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 bg-gradient-to-br from-slate-500 to-slate-700 rounded-2xl border border-slate-400/40 shadow-md opacity-80"></div>
+       </div>
+       
+               {/* Next Card - Visible underneath current card */}
+        {nextCard && nextCardColors && (
+          <div className="absolute inset-0 z-0">
+            <div className={`w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 bg-gradient-to-br ${nextCardColors.front} rounded-2xl border shadow-xl`}>
+              <div className="flex flex-col items-center justify-center h-full p-4 sm:p-6 md:p-8 text-center">
+                <div className="bg-white/20 p-3 rounded-full mb-4">
+                  <div className={`w-8 h-8 ${nextCardColors.accent} rounded-full flex items-center justify-center`}>
+                    <span className="text-white font-bold">?</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
+                  <p className="text-sm text-white/80">{nextCard.domain}</p>
+                  {nextCard.objective && (
+                    <span className="text-xs text-gray-400">Objective {nextCard.objective}</span>
+                  )}
+                </div>
+                <p className="text-lg sm:text-xl text-white/90 leading-relaxed">
+                  {nextCard.question}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      
       {/* Shuffle Button - Top Right Corner */}
       <button
         onClick={onShuffle}
@@ -108,25 +154,51 @@ const Flashcard: React.FC<FlashcardProps> = ({
         </button>
       )}
       
-      <div 
-        className={`relative w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 cursor-pointer transition-transform duration-700 transform-gpu focus:outline-none ${
-          isFlipped ? 'rotate-y-180' : ''
-        }`}
-        onClick={onFlip}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ transformStyle: 'preserve-3d' }}
-        role="button"
-        tabIndex={0}
-        aria-label={isFlipped ? "Card showing answer - click to show question" : "Card showing question - click to reveal answer"}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onFlip();
-          }
-        }}
-      >
+             <motion.div 
+         className={`relative w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 cursor-grab active:cursor-grabbing focus:outline-none ${
+           isFlipped ? 'rotate-y-180' : ''
+         }`}
+         onClick={!isSwiping ? onFlip : undefined}
+         drag={isSwiping ? false : "x"}
+         dragConstraints={{ left: 0, right: 0 }}
+         dragElastic={0.1}
+         onDragEnd={handleDragEnd}
+         whileDrag={{ 
+           scale: 1.02,
+           rotate: 2,
+           zIndex: 10
+         }}
+                   animate={isSwiping ? {
+            x: swipeDirection === 'right' 
+              ? window.innerWidth + 100 
+              : -window.innerWidth - 100,
+            rotate: swipeDirection === 'right' ? 20 : -20,
+            scale: 0.8,
+            opacity: 0
+          } : {
+            x: 0,
+            rotate: 0,
+            scale: 1,
+            opacity: 1
+          }}
+          initial={false}
+         transition={{ 
+           type: "spring", 
+           stiffness: 300, 
+           damping: 30,
+           duration: isSwiping ? 0.3 : 0.5
+         }}
+         style={{ transformStyle: 'preserve-3d' }}
+         role="button"
+         tabIndex={0}
+         aria-label={isFlipped ? "Card showing answer - click to reveal answer" : "Card showing question - click to reveal answer"}
+         onKeyDown={(e) => {
+           if (e.key === 'Enter' || e.key === ' ') {
+             e.preventDefault();
+             onFlip();
+           }
+         }}
+       >
         {/* Front of card */}
         <div className={`absolute inset-0 w-full h-full backface-hidden bg-gradient-to-br ${cardColors.front} rounded-2xl border shadow-2xl`}>
           <div className="flex flex-col items-center justify-center h-full p-4 sm:p-6 md:p-8 text-center">
@@ -168,7 +240,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
       
       {/* Screen reader announcements */}
       <div aria-live="polite" className="sr-only">

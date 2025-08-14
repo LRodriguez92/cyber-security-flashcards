@@ -93,6 +93,11 @@ const CyberSecurityFlashcards: React.FC = () => {
   // Get current card data
   const currentCardData = getCurrentCardData(filteredCards);
 
+  // Get next card data for preview
+  const nextCardData = currentCard < filteredCards.length - 1 
+    ? filteredCards[currentCard + 1] 
+    : undefined;
+
   // Handle confidence marking with current card data
   const handleMarkConfidence = (confidenceLevel: string) => {
     markConfidence(confidenceLevel, currentCardData);
@@ -336,7 +341,9 @@ const CyberSecurityFlashcards: React.FC = () => {
         {filteredCards.length > 0 ? (
           <>
             <Flashcard
+              key={`${currentCard}-${currentCardData?.question}-${currentCardData?.domain}`}
               card={currentCardData!}
+              nextCard={nextCardData}
               isFlipped={isFlipped}
               isShuffled={isShuffled}
               onFlip={flipCard}
