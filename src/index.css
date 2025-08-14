@@ -58,6 +58,7 @@ body {
 /* Ensure content doesn't get cut off on mobile */
 @media (max-width: 640px) {
   .mobile-safe-padding {
+    padding-top: env(safe-area-inset-top, 1rem);
     padding-bottom: env(safe-area-inset-bottom, 1rem);
   }
 }

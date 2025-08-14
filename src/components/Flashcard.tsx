@@ -43,13 +43,13 @@ const Flashcard: React.FC<FlashcardProps> = ({
 
 
   return (
-    <div className="relative mb-8">
+    <div className="relative mb-8 mt-4 sm:mt-6">
              {/* Stacked Card Effect - Background Cards */}
        <div className="absolute inset-0 transform translate-y-2 translate-x-1">
-         <div className="w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 bg-gradient-to-br from-slate-600 to-slate-800 rounded-2xl border border-slate-500/30 shadow-lg opacity-60"></div>
+         <div className="w-full min-h-[240px] sm:h-96 md:h-[400px] lg:h-96 bg-gradient-to-br from-slate-600 to-slate-800 rounded-2xl border border-slate-500/30 shadow-lg opacity-60"></div>
        </div>
        <div className="absolute inset-0 transform translate-y-1 translate-x-0.5">
-         <div className="w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 bg-gradient-to-br from-slate-500 to-slate-700 rounded-2xl border border-slate-400/40 shadow-md opacity-80"></div>
+         <div className="w-full min-h-[240px] sm:h-96 md:h-[400px] lg:h-96 bg-gradient-to-br from-slate-500 to-slate-700 rounded-2xl border border-slate-400/40 shadow-md opacity-80"></div>
        </div>
        
                
@@ -101,7 +101,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
       )}
       
              <motion.div 
-                   className="relative w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 cursor-grab active:cursor-grabbing focus:outline-none"
+                   className="relative w-full min-h-[240px] sm:h-96 md:h-[400px] lg:h-96 cursor-grab active:cursor-grabbing focus:outline-none"
          
          
           onClick={onFlip}

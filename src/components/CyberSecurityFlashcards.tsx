@@ -176,7 +176,7 @@ const CyberSecurityFlashcards: React.FC = () => {
     <div className="min-h-screen min-h-dvh bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-2 sm:p-2 lg:p-3 mobile-safe-padding">
 
       
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto pt-4 sm:pt-6 lg:pt-8">
         <Header />
 
 
@@ -187,7 +187,7 @@ const CyberSecurityFlashcards: React.FC = () => {
         />
 
                  {/* Side-by-side Study Options and Progress Summary */}
-         <div className="mb-2 sm:mb-3 relative">
+         <div className="mb-4 sm:mb-6 mt-4 sm:mt-6 relative">
            {/* Backdrop overlay for both mobile and desktop */}
            {(showFilters || isExpanded) && (
              <div 
@@ -333,9 +333,9 @@ const CyberSecurityFlashcards: React.FC = () => {
           </div>
         </div>
 
-
         {/* Flashcard or Empty State */}
-        {filteredCards.length > 0 ? (
+        <div className="mt-4 sm:mt-6">
+          {filteredCards.length > 0 ? (
           <>
             <Flashcard
               key={`${currentCard}-${currentCardData?.question}-${currentCardData?.domain}`}
@@ -375,6 +375,7 @@ const CyberSecurityFlashcards: React.FC = () => {
             totalCards={filteredCards.length}
           />
         )}
+        </div>
       </div>
     </div>
   );

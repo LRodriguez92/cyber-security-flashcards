@@ -6,7 +6,7 @@ const Header: React.FC = () => {
       <h1 className="text-4xl font-bold text-white mb-1">
         Cybersecurity Flashcards
       </h1>
-      <p className="text-blue-200">Test your knowledge of cybersecurity concepts</p>
+      <p className="text-blue-200 mb-4 sm:mb-6">Test your knowledge of cybersecurity concepts</p>
     </div>
   );
 };
