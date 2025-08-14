@@ -11,13 +11,12 @@ interface DomainFilterProps {
 const DomainFilter: React.FC<DomainFilterProps> = ({ domains, selectedDomains, onDomainChange }) => {
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-white mb-4">Select Domains to Study:</h2>
-      <div className="flex flex-wrap gap-2 justify-center">
+      <div className="grid grid-cols-2 gap-2 justify-items-center sm:flex sm:flex-wrap sm:justify-center">
         {domains.map(domain => (
           <button
             key={domain.id}
             onClick={() => onDomainChange(domain.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
               selectedDomains.includes(domain.id)
                 ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400'
                 : 'bg-slate-700 text-slate-300 hover:bg-slate-600'

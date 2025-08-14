@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Settings, ChevronDown, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings, ChevronDown } from 'lucide-react';
 import { useFlashcardState } from '../hooks/useFlashcardState';
 
 import { getFilteredCards } from '../utils/cardUtils';
@@ -11,6 +11,7 @@ import Header from './Header';
 import ModeSelector from './ModeSelector';
 import DomainFilter from './DomainFilter';
 import ConfidenceFilter from './ConfidenceFilter';
+import Modal from './Modal';
 
 import Flashcard from './Flashcard';
 import ConfidenceButtons from './ConfidenceButtons';
@@ -23,8 +24,6 @@ const CyberSecurityFlashcards: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [pendingDomains, setPendingDomains] = useState<string[]>([]);
   const [pendingConfidenceCategories, setPendingConfidenceCategories] = useState<string[]>([]);
-  const filtersRef = useRef<HTMLDivElement>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
   
   const {
     // State
@@ -65,22 +64,7 @@ const CyberSecurityFlashcards: React.FC = () => {
     }
   }, [currentMode]);
 
-  // Click outside handler for mobile overlays
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showFilters && filtersRef.current && !filtersRef.current.contains(event.target as Node)) {
-        setShowFilters(false);
-      }
-      if (isExpanded && statsRef.current && !statsRef.current.contains(event.target as Node)) {
-        setIsExpanded(false);
-      }
-    };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showFilters, isExpanded]);
 
   // Get filtered cards based on current state
   const filteredCards = getFilteredCards(
@@ -187,18 +171,7 @@ const CyberSecurityFlashcards: React.FC = () => {
         />
 
                  {/* Side-by-side Study Options and Progress Summary */}
-         <div className="mb-4 sm:mb-6 mt-4 sm:mt-6 relative">
-           {/* Backdrop overlay for both mobile and desktop */}
-           {(showFilters || isExpanded) && (
-             <div 
-               className="fixed inset-0 bg-black/30 backdrop-blur-sm mobile-backdrop transition-opacity duration-300 z-20"
-               onClick={() => {
-                 setShowFilters(false);
-                 setIsExpanded(false);
-               }}
-               style={{ pointerEvents: showFilters || isExpanded ? 'auto' : 'none' }}
-             />
-           )}
+         <div className="mb-4 sm:mb-6 mt-4 sm:mt-6">
           <div className="flex gap-3">
             {/* Study Options */}
             <div className="flex-1">
@@ -247,91 +220,72 @@ const CyberSecurityFlashcards: React.FC = () => {
               </button>
             </div>
           </div>
-          
-                     {/* Expanded content areas - Mobile overlay, Desktop inline */}
-           <div className="mt-2 space-y-2 sm:block">
-             {/* Study Options Content */}
-             <div ref={filtersRef} className={`${showFilters ? 'block' : 'hidden'} absolute top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md rounded-lg border border-slate-600/50 shadow-2xl transition-all duration-300 ease-out z-30 ${showFilters ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`} style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-               <div className="p-4">
-                 {/* Close button for both mobile and desktop */}
-                 <div className="flex justify-end mb-3">
-                   <button
-                     onClick={() => setShowFilters(false)}
-                     className="text-white/70 hover:text-white transition-colors p-1"
-                     aria-label="Close filters"
-                   >
-                     <X className="w-4 h-4" />
-                   </button>
-                 </div>
-                {currentMode === 'study' && (
-                  <DomainFilter
-                    domains={domains}
-                    selectedDomains={pendingDomains}
-                    onDomainChange={handlePendingDomainChange}
-                  />
-                )}
-                {currentMode === 'review' && (
-                  <ConfidenceFilter
-                    confidenceCategories={confidenceCategories}
-                    selectedConfidenceCategories={pendingConfidenceCategories}
-                    confidenceTracking={confidenceTracking}
-                    onConfidenceCategoryChange={handlePendingConfidenceCategoryChange}
-                  />
-                )}
-                
-                {/* Confirm/Cancel Buttons */}
-                <div className="flex gap-3 mt-6 justify-center">
-                  <button
-                    onClick={handleCancelChanges}
-                    className="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmChanges}
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
-                  >
-                    Confirm
-                  </button>
-                </div>
-              </div>
-            </div>
+        </div>
 
-                         {/* Progress Summary Content */}
-             <div ref={statsRef} className={`${isExpanded ? 'block' : 'hidden'} absolute top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md rounded-lg border border-slate-600/50 shadow-2xl transition-all duration-300 ease-out z-30 ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`} style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-               <div className="p-4">
-                 {/* Close button for both mobile and desktop */}
-                 <div className="flex justify-end mb-3">
-                   <button
-                     onClick={() => setIsExpanded(false)}
-                     className="text-white/70 hover:text-white transition-colors p-1"
-                     aria-label="Close stats"
-                   >
-                     <X className="w-4 h-4" />
-                   </button>
-                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                  <div className="flex items-center gap-1.5 sm:gap-2 bg-green-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-green-500/30">
-                    <span className="text-sm sm:text-lg">⚡</span>
-                    <span className="text-green-400 font-semibold text-xs sm:text-sm">Knew: {confidenceTracking['knew-it'].length}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 sm:gap-2 bg-blue-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-blue-500/30">
-                    <span className="text-sm sm:text-lg">🤔</span>
-                    <span className="text-blue-400 font-semibold text-xs sm:text-sm">Brief: {confidenceTracking['quick-think'].length}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 sm:gap-2 bg-yellow-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-yellow-500/30">
-                    <span className="text-sm sm:text-lg">🧠</span>
-                    <span className="text-yellow-400 font-semibold text-xs sm:text-sm">Long: {confidenceTracking['long-think'].length}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 sm:gap-2 bg-red-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-red-500/30">
-                    <span className="text-sm sm:text-lg">👀</span>
-                    <span className="text-red-400 font-semibold text-xs sm:text-sm">Peek: {confidenceTracking['peeked'].length}</span>
-                  </div>
-                </div>
-              </div>
+        {/* Study Options Modal */}
+        <Modal 
+          isOpen={showFilters}
+          onClose={() => setShowFilters(false)}
+          title={currentMode === 'review' ? 'Select Categories to Review' : 'Select Domains to Study'}
+        >
+          {currentMode === 'study' && (
+            <DomainFilter
+              domains={domains}
+              selectedDomains={pendingDomains}
+              onDomainChange={handlePendingDomainChange}
+            />
+          )}
+          {currentMode === 'review' && (
+            <ConfidenceFilter
+              confidenceCategories={confidenceCategories}
+              selectedConfidenceCategories={pendingConfidenceCategories}
+              confidenceTracking={confidenceTracking}
+              onConfidenceCategoryChange={handlePendingConfidenceCategoryChange}
+            />
+          )}
+          
+          {/* Confirm/Cancel Buttons */}
+          <div className="flex gap-3 mt-6 justify-center">
+            <button
+              onClick={handleCancelChanges}
+              className="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmChanges}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+            >
+              Confirm
+            </button>
+          </div>
+        </Modal>
+
+        {/* Progress Summary Modal */}
+        <Modal 
+          isOpen={isExpanded}
+          onClose={() => setIsExpanded(false)}
+          title="Progress Summary"
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-green-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-green-500/30">
+              <span className="text-sm sm:text-lg">⚡</span>
+              <span className="text-green-400 font-semibold text-xs sm:text-sm">Knew: {confidenceTracking['knew-it'].length}</span>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-blue-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-blue-500/30">
+              <span className="text-sm sm:text-lg">🤔</span>
+              <span className="text-blue-400 font-semibold text-xs sm:text-sm">Brief: {confidenceTracking['quick-think'].length}</span>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-yellow-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-yellow-500/30">
+              <span className="text-sm sm:text-lg">🧠</span>
+              <span className="text-yellow-400 font-semibold text-xs sm:text-sm">Long: {confidenceTracking['long-think'].length}</span>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-red-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-red-500/30">
+              <span className="text-sm sm:text-lg">👀</span>
+              <span className="text-red-400 font-semibold text-xs sm:text-sm">Peek: {confidenceTracking['peeked'].length}</span>
             </div>
           </div>
-        </div>
+        </Modal>
 
         {/* Flashcard or Empty State */}
         <div className="mt-4 sm:mt-6 flex flex-col min-h-0 flex-1">

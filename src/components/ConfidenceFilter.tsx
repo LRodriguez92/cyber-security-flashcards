@@ -16,7 +16,6 @@ const ConfidenceFilter: React.FC<ConfidenceFilterProps> = ({
 }) => {
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-white mb-4">Select Confidence Categories to Review:</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {confidenceCategories.map(category => (
           <button
