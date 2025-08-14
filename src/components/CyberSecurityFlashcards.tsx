@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Settings, ChevronDown, X } from 'lucide-react';
 import { useFlashcardState } from '../hooks/useFlashcardState';
 
 import { getFilteredCards } from '../utils/cardUtils';
@@ -21,6 +21,8 @@ import EmptyState from './EmptyState';
 const CyberSecurityFlashcards: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
   
   const {
     // State
@@ -53,6 +55,23 @@ const CyberSecurityFlashcards: React.FC = () => {
       setShowFilters(false);
     }
   }, [currentMode]);
+
+  // Click outside handler for mobile overlays
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showFilters && filtersRef.current && !filtersRef.current.contains(event.target as Node)) {
+        setShowFilters(false);
+      }
+      if (isExpanded && statsRef.current && !statsRef.current.contains(event.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilters, isExpanded]);
 
   // Get filtered cards based on current state
   const filteredCards = getFilteredCards(
@@ -89,17 +108,34 @@ const CyberSecurityFlashcards: React.FC = () => {
           onModeChange={switchMode}
         />
 
-        {/* Side-by-side Study Options and Progress Summary */}
-        <div className="mb-4 sm:mb-6">
+                 {/* Side-by-side Study Options and Progress Summary */}
+         <div className="mb-4 sm:mb-6 relative">
+           {/* Mobile backdrop overlay */}
+           {(showFilters || isExpanded) && (
+             <div 
+               className="fixed inset-0 bg-black/30 backdrop-blur-sm mobile-backdrop sm:hidden transition-opacity duration-300"
+               onClick={() => {
+                 setShowFilters(false);
+                 setIsExpanded(false);
+               }}
+             />
+           )}
           <div className="flex gap-3">
             {/* Study Options */}
             <div className="flex-1">
-              <button 
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-1.5 sm:gap-2 text-white/80 hover:text-white transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-1.5 sm:p-2 text-xs sm:text-sm"
-                aria-label={showFilters ? "Hide study options" : "Show study options"}
-                aria-expanded={showFilters}
-              >
+                             <button 
+                 onClick={() => {
+                   if (showFilters) {
+                     setShowFilters(false);
+                   } else {
+                     setShowFilters(true);
+                     setIsExpanded(false); // Close stats if open
+                   }
+                 }}
+                 className="flex items-center gap-1.5 sm:gap-2 text-white/80 hover:text-white transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-1.5 sm:p-2 text-xs sm:text-sm"
+                 aria-label={showFilters ? "Hide study options" : "Show study options"}
+                 aria-expanded={showFilters}
+               >
                 <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden xs:inline">
                   {currentMode === 'review' ? 'Select Categories' : 'Select Domains'}
@@ -113,12 +149,19 @@ const CyberSecurityFlashcards: React.FC = () => {
 
             {/* Progress Summary Toggle */}
             <div className="flex-1">
-              <button 
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-1.5 sm:gap-2 text-blue-200 hover:text-blue-100 transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-1.5 sm:p-2 text-xs sm:text-sm"
-                aria-label={isExpanded ? "Hide progress summary" : "Show progress summary"}
-                aria-expanded={isExpanded}
-              >
+                             <button 
+                 onClick={() => {
+                   if (isExpanded) {
+                     setIsExpanded(false);
+                   } else {
+                     setIsExpanded(true);
+                     setShowFilters(false); // Close filters if open
+                   }
+                 }}
+                 className="flex items-center gap-1.5 sm:gap-2 text-blue-200 hover:text-blue-100 transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-1.5 sm:p-2 text-xs sm:text-sm"
+                 aria-label={isExpanded ? "Hide progress summary" : "Show progress summary"}
+                 aria-expanded={isExpanded}
+               >
                 <span>📊</span>
                 <span className="hidden xs:inline">Progress</span>
                 <span className="xs:hidden">Stats</span>
@@ -127,45 +170,69 @@ const CyberSecurityFlashcards: React.FC = () => {
             </div>
           </div>
           
-          {/* Expanded content areas */}
-          <div className="mt-3 space-y-3">
-            {/* Study Options Content */}
-            <div className={`overflow-hidden transition-all duration-300 ${showFilters ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-              {currentMode === 'study' && (
-                <DomainFilter
-                  domains={domains}
-                  selectedDomains={selectedDomains}
-                  onDomainChange={handleDomainChange}
-                />
-              )}
-              {currentMode === 'review' && (
-                <ConfidenceFilter
-                  confidenceCategories={confidenceCategories}
-                  selectedConfidenceCategories={selectedConfidenceCategories}
-                  confidenceTracking={confidenceTracking}
-                  onConfidenceCategoryChange={handleConfidenceCategoryChange}
-                />
-              )}
+                     {/* Expanded content areas - Mobile overlay, Desktop inline */}
+           <div className="mt-3 space-y-3 sm:block">
+             {/* Study Options Content */}
+             <div ref={filtersRef} className={`sm:overflow-hidden sm:transition-all sm:duration-300 sm:${showFilters ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} ${showFilters ? 'block' : 'hidden'} sm:block absolute sm:relative top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md sm:bg-transparent sm:backdrop-blur-none rounded-lg border border-slate-600/50 sm:border-none shadow-2xl sm:shadow-none transition-all duration-300 ease-out ${showFilters ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+               <div className="p-4 sm:p-0">
+                 {/* Mobile close button */}
+                 <div className="flex justify-end sm:hidden mb-2">
+                   <button
+                     onClick={() => setShowFilters(false)}
+                     className="text-white/70 hover:text-white transition-colors p-1 -mt-1 -mr-1"
+                     aria-label="Close filters"
+                   >
+                     <X className="w-4 h-4" />
+                   </button>
+                 </div>
+                {currentMode === 'study' && (
+                  <DomainFilter
+                    domains={domains}
+                    selectedDomains={selectedDomains}
+                    onDomainChange={handleDomainChange}
+                  />
+                )}
+                {currentMode === 'review' && (
+                  <ConfidenceFilter
+                    confidenceCategories={confidenceCategories}
+                    selectedConfidenceCategories={selectedConfidenceCategories}
+                    confidenceTracking={confidenceTracking}
+                    onConfidenceCategoryChange={handleConfidenceCategoryChange}
+                  />
+                )}
+              </div>
             </div>
 
-            {/* Progress Summary Content */}
-            <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                <div className="flex items-center gap-1.5 sm:gap-2 bg-green-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-green-500/30">
-                  <span className="text-sm sm:text-lg">⚡</span>
-                  <span className="text-green-400 font-semibold text-xs sm:text-sm">Knew: {confidenceTracking['knew-it'].length}</span>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 bg-blue-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-blue-500/30">
-                  <span className="text-sm sm:text-lg">🤔</span>
-                  <span className="text-blue-400 font-semibold text-xs sm:text-sm">Brief: {confidenceTracking['quick-think'].length}</span>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 bg-yellow-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-yellow-500/30">
-                  <span className="text-sm sm:text-lg">🧠</span>
-                  <span className="text-yellow-400 font-semibold text-xs sm:text-sm">Long: {confidenceTracking['long-think'].length}</span>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 bg-red-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-red-500/30">
-                  <span className="text-sm sm:text-lg">👀</span>
-                  <span className="text-red-400 font-semibold text-xs sm:text-sm">Peek: {confidenceTracking['peeked'].length}</span>
+                         {/* Progress Summary Content */}
+             <div ref={statsRef} className={`sm:overflow-hidden sm:transition-all sm:duration-300 sm:${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} ${isExpanded ? 'block' : 'hidden'} sm:block absolute sm:relative top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md sm:bg-transparent sm:backdrop-blur-none rounded-lg border border-slate-600/50 sm:border-none shadow-2xl sm:shadow-none transition-all duration-300 ease-out ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+               <div className="p-4 sm:p-0">
+                 {/* Mobile close button */}
+                 <div className="flex justify-end sm:hidden mb-2">
+                   <button
+                     onClick={() => setIsExpanded(false)}
+                     className="text-white/70 hover:text-white transition-colors p-1 -mt-1 -mr-1"
+                     aria-label="Close stats"
+                   >
+                     <X className="w-4 h-4" />
+                   </button>
+                 </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-green-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-green-500/30">
+                    <span className="text-sm sm:text-lg">⚡</span>
+                    <span className="text-green-400 font-semibold text-xs sm:text-sm">Knew: {confidenceTracking['knew-it'].length}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-blue-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-blue-500/30">
+                    <span className="text-sm sm:text-lg">🤔</span>
+                    <span className="text-blue-400 font-semibold text-xs sm:text-sm">Brief: {confidenceTracking['quick-think'].length}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-yellow-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-yellow-500/30">
+                    <span className="text-sm sm:text-lg">🧠</span>
+                    <span className="text-yellow-400 font-semibold text-xs sm:text-sm">Long: {confidenceTracking['long-think'].length}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-red-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-red-500/30">
+                    <span className="text-sm sm:text-lg">👀</span>
+                    <span className="text-red-400 font-semibold text-xs sm:text-sm">Peek: {confidenceTracking['peeked'].length}</span>
+                  </div>
                 </div>
               </div>
             </div>
