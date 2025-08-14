@@ -65,10 +65,10 @@ const Flashcard: React.FC<FlashcardProps> = ({
       {/* Shuffle Button - Top Right Corner */}
       <button
         onClick={onShuffle}
-        className={`absolute top-4 right-4 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+        className={`absolute top-4 right-4 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm ${
           isShuffled
-            ? 'bg-orange-600 text-white shadow-lg scale-110 ring-2 ring-orange-400'
-            : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600/80 hover:scale-110 active:scale-95'
+            ? 'bg-orange-600/90 text-white shadow-lg scale-110 ring-2 ring-orange-400'
+            : 'bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:scale-110 active:scale-95'
         }`}
         title={isShuffled ? "Turn off shuffle" : "Shuffle cards"}
         aria-label={isShuffled ? "Turn off shuffle" : "Shuffle cards"}
@@ -81,10 +81,10 @@ const Flashcard: React.FC<FlashcardProps> = ({
         <button
           onClick={onPrev}
           disabled={currentCard === 0 || totalCards === 0}
-          className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+          className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm ${
             currentCard === 0 || totalCards === 0
-              ? 'bg-slate-800/50 text-slate-500 cursor-not-allowed'
-              : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600/80 hover:scale-110 active:scale-95'
+              ? 'bg-slate-800/30 text-slate-400 cursor-not-allowed'
+              : 'bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:scale-110 active:scale-95'
           }`}
           aria-label="Go to previous card"
         >
@@ -97,10 +97,10 @@ const Flashcard: React.FC<FlashcardProps> = ({
         <button
           onClick={onNext}
           disabled={currentCard === totalCards - 1 || totalCards === 0}
-          className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+          className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm ${
             currentCard === totalCards - 1 || totalCards === 0
-              ? 'bg-slate-800/50 text-slate-500 cursor-not-allowed'
-              : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600/80 hover:scale-110 active:scale-95'
+              ? 'bg-slate-800/30 text-slate-400 cursor-not-allowed'
+              : 'bg-slate-700/50 text-slate-200 hover:bg-slate-600/60 hover:scale-110 active:scale-95'
           }`}
           aria-label="Go to next card"
         >
