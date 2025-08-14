@@ -334,7 +334,7 @@ const CyberSecurityFlashcards: React.FC = () => {
         </div>
 
         {/* Flashcard or Empty State */}
-        <div className="mt-4 sm:mt-6">
+        <div className="mt-4 sm:mt-6 flex flex-col min-h-0 flex-1">
           {filteredCards.length > 0 ? (
           <>
             <Flashcard
@@ -365,6 +365,9 @@ const CyberSecurityFlashcards: React.FC = () => {
         ) : (
           <EmptyState currentMode={currentMode} />
         )}
+
+        {/* Spacer to push navigation to bottom on mobile */}
+        <div className="flex-1 min-h-[60px] sm:min-h-0"></div>
 
         <Navigation onReset={resetState} hidden={currentMode === 'study' && isFlipped && !answered} />
 
