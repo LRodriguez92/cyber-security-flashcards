@@ -7,7 +7,6 @@ import { getCardColors } from '../utils/colorUtils';
 
 interface FlashcardProps {
   card: FlashcardType;
-  nextCard?: FlashcardType;
   isFlipped: boolean;
   isShuffled: boolean;
   onFlip: () => void;
@@ -22,7 +21,6 @@ interface FlashcardProps {
 
 const Flashcard: React.FC<FlashcardProps> = ({ 
   card, 
-  nextCard,
   isFlipped, 
   isShuffled, 
   onFlip, 
@@ -35,7 +33,6 @@ const Flashcard: React.FC<FlashcardProps> = ({
   totalCards
 }) => {
   const cardColors = getCardColors(card.color);
-  const nextCardColors = nextCard ? getCardColors(nextCard.color) : null;
 
   const [isSwiping, setIsSwiping] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
@@ -55,29 +52,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
          <div className="w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 bg-gradient-to-br from-slate-500 to-slate-700 rounded-2xl border border-slate-400/40 shadow-md opacity-80"></div>
        </div>
        
-               {/* Next Card - Visible underneath current card */}
-        {nextCard && nextCardColors && (
-          <div className="absolute inset-0 z-0">
-            <div className={`w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 bg-gradient-to-br ${nextCardColors.front} rounded-2xl border shadow-xl`}>
-              <div className="flex flex-col items-center justify-center h-full p-4 sm:p-6 md:p-8 text-center">
-                <div className="bg-white/20 p-3 rounded-full mb-4">
-                  <div className={`w-8 h-8 ${nextCardColors.accent} rounded-full flex items-center justify-center`}>
-                    <span className="text-white font-bold">?</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
-                  <p className="text-sm text-white/80">{nextCard.domain}</p>
-                  {nextCard.objective && (
-                    <span className="text-xs text-gray-400">Objective {nextCard.objective}</span>
-                  )}
-                </div>
-                <p className="text-lg sm:text-xl text-white/90 leading-relaxed">
-                  {nextCard.question}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+               
       
       {/* Shuffle Button - Top Right Corner */}
       <button
@@ -195,7 +170,13 @@ const Flashcard: React.FC<FlashcardProps> = ({
          }}
        >
                  {/* Front of card */}
-         <div className={`absolute inset-0 w-full h-full bg-gradient-to-br ${cardColors.front} rounded-2xl border shadow-2xl`} style={{ backfaceVisibility: 'hidden' }}>
+         <motion.div 
+           className={`absolute inset-0 w-full h-full bg-gradient-to-br ${cardColors.front} rounded-2xl border shadow-2xl`} 
+           style={{ backfaceVisibility: 'hidden' }}
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           transition={{ duration: 0.5, ease: "easeOut" }}
+         >
           <div className="flex flex-col items-center justify-center h-full p-4 sm:p-6 md:p-8 text-center">
             <div className="bg-white/20 p-3 rounded-full mb-4">
               <div className={`w-8 h-8 ${cardColors.accent} rounded-full flex items-center justify-center`}>
@@ -211,12 +192,18 @@ const Flashcard: React.FC<FlashcardProps> = ({
             <p className="text-lg sm:text-xl text-white/90 leading-relaxed">
               {card.question}
             </p>
-            <p className="text-sm text-white/70 mt-6">Tap to reveal answer</p>
-          </div>
-        </div>
+                         <p className="text-sm text-white/70 mt-6">Tap to reveal answer</p>
+           </div>
+         </motion.div>
 
                  {/* Back of card */}
-         <div className={`absolute inset-0 w-full h-full bg-gradient-to-br ${cardColors.back} rounded-2xl border shadow-2xl`} style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+         <motion.div 
+           className={`absolute inset-0 w-full h-full bg-gradient-to-br ${cardColors.back} rounded-2xl border shadow-2xl`} 
+           style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           transition={{ duration: 0.5, ease: "easeOut" }}
+         >
           <div className="flex flex-col items-center justify-center h-full p-4 sm:p-6 md:p-8 text-center">
             <div className="bg-white/20 p-3 rounded-full mb-4">
               <div className={`w-8 h-8 ${cardColors.accent} rounded-full flex items-center justify-center`}>
@@ -230,11 +217,11 @@ const Flashcard: React.FC<FlashcardProps> = ({
                 <span className="text-xs text-gray-400">Objective {card.objective}</span>
               )}
             </div>
-            <p className="text-base sm:text-lg text-white/90 leading-relaxed">
-              {card.answer}
-            </p>
-          </div>
-        </div>
+                         <p className="text-base sm:text-lg text-white/90 leading-relaxed">
+               {card.answer}
+             </p>
+           </div>
+         </motion.div>
       </motion.div>
       
       {/* Screen reader announcements */}
