@@ -18,10 +18,10 @@ import ConfidenceButtons from './ConfidenceButtons';
 import Navigation from './Navigation';
 import CompletionMessage from './CompletionMessage';
 import EmptyState from './EmptyState';
+import ProgressSummary from './ProgressSummary';
 
 const CyberSecurityFlashcards: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [pendingDomains, setPendingDomains] = useState<string[]>([]);
   const [pendingConfidenceCategories, setPendingConfidenceCategories] = useState<string[]>([]);
   
@@ -97,7 +97,6 @@ const CyberSecurityFlashcards: React.FC = () => {
       setPendingConfidenceCategories(selectedConfidenceCategories);
     }
     setShowFilters(true);
-    setIsExpanded(false);
   };
 
   // Handle pending domain changes
@@ -160,7 +159,7 @@ const CyberSecurityFlashcards: React.FC = () => {
     <div className="min-h-screen min-h-dvh bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-2 sm:p-2 lg:p-3 mobile-safe-padding">
 
       
-      <div className="max-w-4xl mx-auto pt-4 sm:pt-6 lg:pt-8">
+      <div className="max-w-4xl mx-auto pt-8 sm:pt-12 lg:pt-16">
         <Header />
 
 
@@ -170,23 +169,22 @@ const CyberSecurityFlashcards: React.FC = () => {
           onModeChange={switchMode}
         />
 
-                 {/* Side-by-side Study Options and Progress Summary */}
-         <div className="mb-4 sm:mb-6 mt-4 sm:mt-6">
+        {/* Study Options */}
+        <div className="mb-4 sm:mb-6 mt-4 sm:mt-6">
           <div className="flex gap-3">
-            {/* Study Options */}
             <div className="flex-1">
-                             <button 
-                 onClick={() => {
-                   if (showFilters) {
-                     setShowFilters(false);
-                   } else {
-                     handleOpenFilters();
-                   }
-                 }}
-                 className="flex items-center gap-1.5 sm:gap-2 text-white/80 hover:text-white transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-1.5 sm:p-2 text-xs sm:text-sm"
-                 aria-label={showFilters ? "Hide study options" : "Show study options"}
-                 aria-expanded={showFilters}
-               >
+              <button 
+                onClick={() => {
+                  if (showFilters) {
+                    setShowFilters(false);
+                  } else {
+                    handleOpenFilters();
+                  }
+                }}
+                className="flex items-center gap-1.5 sm:gap-2 text-white/80 hover:text-white transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-1.5 sm:p-2 text-xs sm:text-sm"
+                aria-label={showFilters ? "Hide study options" : "Show study options"}
+                aria-expanded={showFilters}
+              >
                 <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden xs:inline">
                   {currentMode === 'review' ? 'Select Categories' : 'Select Domains'}
@@ -195,28 +193,6 @@ const CyberSecurityFlashcards: React.FC = () => {
                   {currentMode === 'review' ? 'Categories' : 'Domains'}
                 </span>
                 <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-
-            {/* Progress Summary Toggle */}
-            <div className="flex-1">
-                             <button 
-                 onClick={() => {
-                   if (isExpanded) {
-                     setIsExpanded(false);
-                   } else {
-                     setIsExpanded(true);
-                     setShowFilters(false); // Close filters if open
-                   }
-                 }}
-                 className="flex items-center gap-1.5 sm:gap-2 text-blue-200 hover:text-blue-100 transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-1.5 sm:p-2 text-xs sm:text-sm"
-                 aria-label={isExpanded ? "Hide progress summary" : "Show progress summary"}
-                 aria-expanded={isExpanded}
-               >
-                <span>📊</span>
-                <span className="hidden xs:inline">Progress</span>
-                <span className="xs:hidden">Stats</span>
-                <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
               </button>
             </div>
           </div>
@@ -261,31 +237,7 @@ const CyberSecurityFlashcards: React.FC = () => {
           </div>
         </Modal>
 
-        {/* Progress Summary Modal */}
-        <Modal 
-          isOpen={isExpanded}
-          onClose={() => setIsExpanded(false)}
-          title="Progress Summary"
-        >
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-green-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-green-500/30">
-              <span className="text-sm sm:text-lg">⚡</span>
-              <span className="text-green-400 font-semibold text-xs sm:text-sm">Knew: {confidenceTracking['knew-it'].length}</span>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-blue-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-blue-500/30">
-              <span className="text-sm sm:text-lg">🤔</span>
-              <span className="text-blue-400 font-semibold text-xs sm:text-sm">Brief: {confidenceTracking['quick-think'].length}</span>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-yellow-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-yellow-500/30">
-              <span className="text-sm sm:text-lg">🧠</span>
-              <span className="text-yellow-400 font-semibold text-xs sm:text-sm">Long: {confidenceTracking['long-think'].length}</span>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-red-900/30 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-red-500/30">
-              <span className="text-sm sm:text-lg">👀</span>
-              <span className="text-red-400 font-semibold text-xs sm:text-sm">Peek: {confidenceTracking['peeked'].length}</span>
-            </div>
-          </div>
-        </Modal>
+
 
         {/* Flashcard or Empty State */}
         <div className="mt-4 sm:mt-6 flex flex-col min-h-0 flex-1">
@@ -320,8 +272,13 @@ const CyberSecurityFlashcards: React.FC = () => {
           <EmptyState currentMode={currentMode} />
         )}
 
+        {/* Progress Summary - Hide when confidence buttons are visible */}
+        {!(currentMode === 'study' && isFlipped && !answered) && (
+          <ProgressSummary confidenceTracking={confidenceTracking} />
+        )}
+
         {/* Spacer to push navigation to bottom on mobile */}
-        <div className="flex-1 min-h-[60px] sm:min-h-0"></div>
+        <div className="flex-1 min-h-[20px] sm:min-h-0"></div>
 
         <Navigation onReset={resetState} hidden={currentMode === 'study' && isFlipped && !answered} />
 
