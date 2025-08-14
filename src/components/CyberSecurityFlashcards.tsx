@@ -21,6 +21,8 @@ import EmptyState from './EmptyState';
 const CyberSecurityFlashcards: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [pendingDomains, setPendingDomains] = useState<string[]>([]);
+  const [pendingConfidenceCategories, setPendingConfidenceCategories] = useState<string[]>([]);
   const filtersRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   
@@ -42,10 +44,17 @@ const CyberSecurityFlashcards: React.FC = () => {
     flipCard,
     markConfidence,
     shuffleCards,
-    handleDomainChange,
-    handleConfidenceCategoryChange,
     switchMode,
     getCurrentCardData,
+    
+    // Setters
+    setCurrentCard,
+    setIsFlipped,
+    setAnswered,
+    setSelectedDomains,
+    setSelectedConfidenceCategories,
+    setIsShuffled,
+    setShuffledIndices,
   } = useFlashcardState();
 
   useEffect(() => {
@@ -94,6 +103,73 @@ const CyberSecurityFlashcards: React.FC = () => {
     shuffleCards(filteredCards);
   };
 
+  // Initialize pending state when filters are opened
+  const handleOpenFilters = () => {
+    if (currentMode === 'study') {
+      setPendingDomains(selectedDomains);
+    } else {
+      setPendingConfidenceCategories(selectedConfidenceCategories);
+    }
+    setShowFilters(true);
+    setIsExpanded(false);
+  };
+
+  // Handle pending domain changes
+  const handlePendingDomainChange = (domainId: string) => {
+    if (domainId === 'all') {
+      setPendingDomains(['all']);
+    } else {
+      setPendingDomains(prev => {
+        const withoutAll = prev.filter(id => id !== 'all');
+        
+        if (withoutAll.includes(domainId)) {
+          const newSelection = withoutAll.filter(id => id !== domainId);
+          return newSelection.length === 0 ? ['all'] : newSelection;
+        } else {
+          return [...withoutAll, domainId];
+        }
+      });
+    }
+  };
+
+  // Handle pending confidence category changes
+  const handlePendingConfidenceCategoryChange = (categoryId: string) => {
+    setPendingConfidenceCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+
+  // Confirm and apply changes
+  const handleConfirmChanges = () => {
+    if (currentMode === 'study') {
+      // Apply domain changes
+      setSelectedDomains(pendingDomains);
+      setCurrentCard(0);
+      setIsFlipped(false);
+      setAnswered(false);
+      setIsShuffled(false);
+      setShuffledIndices([]);
+    } else {
+      // Apply confidence category changes
+      setSelectedConfidenceCategories(pendingConfidenceCategories);
+      setCurrentCard(0);
+      setIsFlipped(false);
+      setAnswered(false);
+      setIsShuffled(false);
+      setShuffledIndices([]);
+    }
+    setShowFilters(false);
+  };
+
+  // Cancel changes
+  const handleCancelChanges = () => {
+    setShowFilters(false);
+  };
+
   return (
     <div className="min-h-screen min-h-dvh bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-3 sm:p-4 lg:p-6 mobile-safe-padding">
 
@@ -128,8 +204,7 @@ const CyberSecurityFlashcards: React.FC = () => {
                    if (showFilters) {
                      setShowFilters(false);
                    } else {
-                     setShowFilters(true);
-                     setIsExpanded(false); // Close stats if open
+                     handleOpenFilters();
                    }
                  }}
                  className="flex items-center gap-1.5 sm:gap-2 text-white/80 hover:text-white transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-1.5 sm:p-2 text-xs sm:text-sm"
@@ -188,18 +263,34 @@ const CyberSecurityFlashcards: React.FC = () => {
                 {currentMode === 'study' && (
                   <DomainFilter
                     domains={domains}
-                    selectedDomains={selectedDomains}
-                    onDomainChange={handleDomainChange}
+                    selectedDomains={pendingDomains}
+                    onDomainChange={handlePendingDomainChange}
                   />
                 )}
                 {currentMode === 'review' && (
                   <ConfidenceFilter
                     confidenceCategories={confidenceCategories}
-                    selectedConfidenceCategories={selectedConfidenceCategories}
+                    selectedConfidenceCategories={pendingConfidenceCategories}
                     confidenceTracking={confidenceTracking}
-                    onConfidenceCategoryChange={handleConfidenceCategoryChange}
+                    onConfidenceCategoryChange={handlePendingConfidenceCategoryChange}
                   />
                 )}
+                
+                {/* Confirm/Cancel Buttons */}
+                <div className="flex gap-3 mt-6 justify-center">
+                  <button
+                    onClick={handleCancelChanges}
+                    className="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmChanges}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                  >
+                    Confirm
+                  </button>
+                </div>
               </div>
             </div>
 

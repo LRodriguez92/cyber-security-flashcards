@@ -76,6 +76,13 @@ export const useFlashcardState = () => {
       }));
       
       setAnswered(true);
+      
+      // Automatically advance to the next card after a short delay
+      setTimeout(() => {
+        setCurrentCard(prev => prev + 1);
+        setIsFlipped(false);
+        setAnswered(false);
+      }, 500); // 500ms delay to show the confidence selection briefly
     }
   }, [answered, currentCard]);
 

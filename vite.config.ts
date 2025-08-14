@@ -8,6 +8,5 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000, 
     strictPort: false,
-    allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', 'https://8d8f0123a9df.ngrok-free.app'],
   },
 })
