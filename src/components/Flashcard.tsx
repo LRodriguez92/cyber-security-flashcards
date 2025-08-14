@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import type { PanInfo } from 'framer-motion';
+
 import { Shuffle, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Flashcard as FlashcardType } from '../types/flashcard';
 import { getCardColors } from '../utils/colorUtils';
@@ -42,37 +42,8 @@ const Flashcard: React.FC<FlashcardProps> = ({
 
 
 
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const swipeThreshold = 100;
-    
-    if (info.offset.x > swipeThreshold && onSwipeRight) {
-      setIsSwiping(true);
-      setSwipeDirection('right');
-      // Let the card swipe off screen completely before navigating
-      setTimeout(() => {
-        // Reset state BEFORE navigation to prevent animation conflicts
-        setIsSwiping(false);
-        setSwipeDirection(null);
-        // Small delay to ensure state is reset before navigation
-        setTimeout(() => {
-          onSwipeRight();
-        }, 50);
-      }, 300);
-    } else if (info.offset.x < -swipeThreshold && onSwipeLeft) {
-      setIsSwiping(true);
-      setSwipeDirection('left');
-      // Let the card swipe off screen completely before navigating
-      setTimeout(() => {
-        // Reset state BEFORE navigation to prevent animation conflicts
-        setIsSwiping(false);
-        setSwipeDirection(null);
-        // Small delay to ensure state is reset before navigation
-        setTimeout(() => {
-          onSwipeLeft();
-        }, 50);
-      }, 300);
-    }
-  };
+
+
 
   return (
     <div className="relative mb-8">
@@ -155,14 +126,38 @@ const Flashcard: React.FC<FlashcardProps> = ({
       )}
       
              <motion.div 
-         className={`relative w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 cursor-grab active:cursor-grabbing focus:outline-none ${
-           isFlipped ? 'rotate-y-180' : ''
-         }`}
-         onClick={!isSwiping ? onFlip : undefined}
-         drag={isSwiping ? false : "x"}
-         dragConstraints={{ left: 0, right: 0 }}
-         dragElastic={0.1}
-         onDragEnd={handleDragEnd}
+                   className="relative w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 cursor-grab active:cursor-grabbing focus:outline-none"
+         
+         
+          onClick={onFlip}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.1}
+          onDragEnd={(event, info) => {
+            const swipeThreshold = 100;
+            
+            if (info.offset.x > swipeThreshold && onSwipeRight) {
+              setIsSwiping(true);
+              setSwipeDirection('right');
+              setTimeout(() => {
+                setIsSwiping(false);
+                setSwipeDirection(null);
+                setTimeout(() => {
+                  onSwipeRight();
+                }, 50);
+              }, 300);
+            } else if (info.offset.x < -swipeThreshold && onSwipeLeft) {
+              setIsSwiping(true);
+              setSwipeDirection('left');
+              setTimeout(() => {
+                setIsSwiping(false);
+                setSwipeDirection(null);
+                setTimeout(() => {
+                  onSwipeLeft();
+                }, 50);
+              }, 300);
+            }
+          }}
          whileDrag={{ 
            scale: 1.02,
            rotate: 2,
@@ -177,7 +172,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
             opacity: 0
           } : {
             x: 0,
-            rotate: 0,
+            rotateY: isFlipped ? 180 : 0,
             scale: 1,
             opacity: 1
           }}
@@ -199,8 +194,8 @@ const Flashcard: React.FC<FlashcardProps> = ({
            }
          }}
        >
-        {/* Front of card */}
-        <div className={`absolute inset-0 w-full h-full backface-hidden bg-gradient-to-br ${cardColors.front} rounded-2xl border shadow-2xl`}>
+                 {/* Front of card */}
+         <div className={`absolute inset-0 w-full h-full bg-gradient-to-br ${cardColors.front} rounded-2xl border shadow-2xl`} style={{ backfaceVisibility: 'hidden' }}>
           <div className="flex flex-col items-center justify-center h-full p-4 sm:p-6 md:p-8 text-center">
             <div className="bg-white/20 p-3 rounded-full mb-4">
               <div className={`w-8 h-8 ${cardColors.accent} rounded-full flex items-center justify-center`}>
@@ -220,8 +215,8 @@ const Flashcard: React.FC<FlashcardProps> = ({
           </div>
         </div>
 
-        {/* Back of card */}
-        <div className={`absolute inset-0 w-full h-full backface-hidden bg-gradient-to-br ${cardColors.back} rounded-2xl border shadow-2xl rotate-y-180`}>
+                 {/* Back of card */}
+         <div className={`absolute inset-0 w-full h-full bg-gradient-to-br ${cardColors.back} rounded-2xl border shadow-2xl`} style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
           <div className="flex flex-col items-center justify-center h-full p-4 sm:p-6 md:p-8 text-center">
             <div className="bg-white/20 p-3 rounded-full mb-4">
               <div className={`w-8 h-8 ${cardColors.accent} rounded-full flex items-center justify-center`}>
