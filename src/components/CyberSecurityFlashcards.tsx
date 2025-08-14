@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, ChevronDown } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useFlashcardState } from '../hooks/useFlashcardState';
 
 import { getFilteredCards } from '../utils/cardUtils';
@@ -173,27 +173,23 @@ const CyberSecurityFlashcards: React.FC = () => {
         <div className="mb-4 sm:mb-6 mt-4 sm:mt-6">
           <div className="flex gap-3">
             <div className="flex-1">
-              <button 
-                onClick={() => {
-                  if (showFilters) {
-                    setShowFilters(false);
-                  } else {
-                    handleOpenFilters();
-                  }
-                }}
-                className="flex items-center gap-1.5 sm:gap-2 text-white/80 hover:text-white transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-1.5 sm:p-2 text-xs sm:text-sm"
-                aria-label={showFilters ? "Hide study options" : "Show study options"}
-                aria-expanded={showFilters}
-              >
-                <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">
-                  {currentMode === 'review' ? 'Select Categories' : 'Select Domains'}
-                </span>
-                <span className="xs:hidden">
-                  {currentMode === 'review' ? 'Categories' : 'Domains'}
-                </span>
-                <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-              </button>
+                             <button 
+                 onClick={() => {
+                   if (showFilters) {
+                     setShowFilters(false);
+                   } else {
+                     handleOpenFilters();
+                   }
+                 }}
+                 className="flex items-center gap-2 text-white/80 hover:text-white transition-colors w-full justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-3 sm:p-4 text-base sm:text-lg font-medium"
+                 aria-label={showFilters ? "Hide study options" : "Show study options"}
+                 aria-expanded={showFilters}
+               >
+                 <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+                                   <span>
+                    {currentMode === 'review' ? 'Select Categories to Review' : 'Select Domains to Study'}
+                  </span>
+               </button>
             </div>
           </div>
         </div>
