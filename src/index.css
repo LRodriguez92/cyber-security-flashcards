@@ -19,8 +19,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   /* Mobile viewport handling */
-  min-height: 100dvh; /* dynamic viewport height for mobile browsers */
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
@@ -38,6 +38,21 @@ body {
   .min-h-dvh {
     min-height: 100dvh;
   }
+  
+  .h-dvh {
+    height: 100dvh;
+  }
+}
+
+/* Allow vertical overscroll for pull-to-refresh, prevent horizontal overscroll */
+html {
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
+}
+
+body {
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
 }
 
 /* Ensure content doesn't get cut off on mobile */

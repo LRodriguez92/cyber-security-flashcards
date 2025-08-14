@@ -3,9 +3,12 @@ import { RotateCcw } from 'lucide-react';
 
 interface NavigationProps {
   onReset: () => void;
+  hidden?: boolean;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ onReset }) => {
+const Navigation: React.FC<NavigationProps> = ({ onReset, hidden = false }) => {
+  if (hidden) return null;
+  
   return (
     <div className="flex justify-center">
       <button

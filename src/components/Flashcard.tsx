@@ -109,7 +109,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
       )}
       
       <div 
-        className={`relative w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 cursor-pointer transition-transform duration-700 transform-gpu focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+        className={`relative w-full min-h-[300px] sm:h-96 md:h-[400px] lg:h-96 cursor-pointer transition-transform duration-700 transform-gpu focus:outline-none ${
           isFlipped ? 'rotate-y-180' : ''
         }`}
         onClick={onFlip}

@@ -9,7 +9,7 @@ interface ModeSelectorProps {
 
 const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onModeChange }) => {
   return (
-    <div className="mb-2 sm:mb-4">
+    <div className="mb-1 sm:mb-2">
       {/* Mobile: Stacked layout, Desktop: Side-by-side */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center">
         <button

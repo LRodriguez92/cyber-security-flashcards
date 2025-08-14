@@ -171,7 +171,7 @@ const CyberSecurityFlashcards: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen min-h-dvh bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-3 sm:p-4 lg:p-6 mobile-safe-padding">
+    <div className="min-h-screen min-h-dvh bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-2 sm:p-2 lg:p-3 mobile-safe-padding">
 
       
       <div className="max-w-4xl mx-auto">
@@ -185,15 +185,16 @@ const CyberSecurityFlashcards: React.FC = () => {
         />
 
                  {/* Side-by-side Study Options and Progress Summary */}
-         <div className="mb-4 sm:mb-6 relative">
-           {/* Mobile backdrop overlay */}
+         <div className="mb-2 sm:mb-3 relative">
+           {/* Backdrop overlay for both mobile and desktop */}
            {(showFilters || isExpanded) && (
              <div 
-               className="fixed inset-0 bg-black/30 backdrop-blur-sm mobile-backdrop sm:hidden transition-opacity duration-300"
+               className="fixed inset-0 bg-black/30 backdrop-blur-sm mobile-backdrop transition-opacity duration-300 z-20"
                onClick={() => {
                  setShowFilters(false);
                  setIsExpanded(false);
                }}
+               style={{ pointerEvents: showFilters || isExpanded ? 'auto' : 'none' }}
              />
            )}
           <div className="flex gap-3">
@@ -246,12 +247,12 @@ const CyberSecurityFlashcards: React.FC = () => {
           </div>
           
                      {/* Expanded content areas - Mobile overlay, Desktop inline */}
-           <div className="mt-3 space-y-3 sm:block">
+           <div className="mt-2 space-y-2 sm:block">
              {/* Study Options Content */}
-             <div ref={filtersRef} className={`sm:overflow-hidden sm:transition-all sm:duration-300 sm:${showFilters ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} ${showFilters ? 'block' : 'hidden'} sm:block absolute sm:relative top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md sm:bg-transparent sm:backdrop-blur-none rounded-lg border border-slate-600/50 sm:border-none shadow-2xl sm:shadow-none transition-all duration-300 ease-out ${showFilters ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
-               <div className="p-4 sm:p-0">
-                 {/* Mobile close button */}
-                 <div className="flex justify-end sm:hidden mb-3">
+             <div ref={filtersRef} className={`${showFilters ? 'block' : 'hidden'} absolute top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md rounded-lg border border-slate-600/50 shadow-2xl transition-all duration-300 ease-out z-30 ${showFilters ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`} style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+               <div className="p-4">
+                 {/* Close button for both mobile and desktop */}
+                 <div className="flex justify-end mb-3">
                    <button
                      onClick={() => setShowFilters(false)}
                      className="text-white/70 hover:text-white transition-colors p-1"
@@ -295,10 +296,10 @@ const CyberSecurityFlashcards: React.FC = () => {
             </div>
 
                          {/* Progress Summary Content */}
-             <div ref={statsRef} className={`sm:overflow-hidden sm:transition-all sm:duration-300 sm:${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} ${isExpanded ? 'block' : 'hidden'} sm:block absolute sm:relative top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md sm:bg-transparent sm:backdrop-blur-none rounded-lg border border-slate-600/50 sm:border-none shadow-2xl sm:shadow-none transition-all duration-300 ease-out ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
-               <div className="p-4 sm:p-0">
-                 {/* Mobile close button */}
-                 <div className="flex justify-end sm:hidden mb-3">
+             <div ref={statsRef} className={`${isExpanded ? 'block' : 'hidden'} absolute top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md rounded-lg border border-slate-600/50 shadow-2xl transition-all duration-300 ease-out z-30 ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`} style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+               <div className="p-4">
+                 {/* Close button for both mobile and desktop */}
+                 <div className="flex justify-end mb-3">
                    <button
                      onClick={() => setIsExpanded(false)}
                      className="text-white/70 hover:text-white transition-colors p-1"
@@ -350,17 +351,19 @@ const CyberSecurityFlashcards: React.FC = () => {
 
             {/* Confidence Buttons - Only show in study mode */}
             {currentMode === 'study' && isFlipped && (
-              <ConfidenceButtons
-                answered={answered}
-                onMarkConfidence={handleMarkConfidence}
-              />
+              <div className="relative z-30">
+                <ConfidenceButtons
+                  answered={answered}
+                  onMarkConfidence={handleMarkConfidence}
+                />
+              </div>
             )}
           </>
         ) : (
           <EmptyState currentMode={currentMode} />
         )}
 
-        <Navigation onReset={resetState} />
+        <Navigation onReset={resetState} hidden={currentMode === 'study' && isFlipped && !answered} />
 
         {/* Completion Message */}
         {currentCard === filteredCards.length - 1 && answered && filteredCards.length > 0 && (
