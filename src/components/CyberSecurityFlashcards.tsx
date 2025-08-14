@@ -176,10 +176,10 @@ const CyberSecurityFlashcards: React.FC = () => {
              <div ref={filtersRef} className={`sm:overflow-hidden sm:transition-all sm:duration-300 sm:${showFilters ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} ${showFilters ? 'block' : 'hidden'} sm:block absolute sm:relative top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md sm:bg-transparent sm:backdrop-blur-none rounded-lg border border-slate-600/50 sm:border-none shadow-2xl sm:shadow-none transition-all duration-300 ease-out ${showFilters ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
                <div className="p-4 sm:p-0">
                  {/* Mobile close button */}
-                 <div className="flex justify-end sm:hidden mb-2">
+                 <div className="flex justify-end sm:hidden mb-3">
                    <button
                      onClick={() => setShowFilters(false)}
-                     className="text-white/70 hover:text-white transition-colors p-1 -mt-1 -mr-1"
+                     className="text-white/70 hover:text-white transition-colors p-1"
                      aria-label="Close filters"
                    >
                      <X className="w-4 h-4" />
@@ -207,10 +207,10 @@ const CyberSecurityFlashcards: React.FC = () => {
              <div ref={statsRef} className={`sm:overflow-hidden sm:transition-all sm:duration-300 sm:${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} ${isExpanded ? 'block' : 'hidden'} sm:block absolute sm:relative top-full left-0 right-0 mobile-overlay bg-slate-900/95 backdrop-blur-md sm:bg-transparent sm:backdrop-blur-none rounded-lg border border-slate-600/50 sm:border-none shadow-2xl sm:shadow-none transition-all duration-300 ease-out ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
                <div className="p-4 sm:p-0">
                  {/* Mobile close button */}
-                 <div className="flex justify-end sm:hidden mb-2">
+                 <div className="flex justify-end sm:hidden mb-3">
                    <button
                      onClick={() => setIsExpanded(false)}
-                     className="text-white/70 hover:text-white transition-colors p-1 -mt-1 -mr-1"
+                     className="text-white/70 hover:text-white transition-colors p-1"
                      aria-label="Close stats"
                    >
                      <X className="w-4 h-4" />
