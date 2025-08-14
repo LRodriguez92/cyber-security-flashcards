@@ -81,7 +81,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
         <button
           onClick={onPrev}
           disabled={currentCard === 0 || totalCards === 0}
-          className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm ${
+          className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm hidden md:flex ${
             currentCard === 0 || totalCards === 0
               ? 'bg-slate-800/30 text-slate-400 cursor-not-allowed'
               : 'bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:scale-110 active:scale-95'
@@ -97,7 +97,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
         <button
           onClick={onNext}
           disabled={currentCard === totalCards - 1 || totalCards === 0}
-          className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm ${
+          className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm hidden md:flex ${
             currentCard === totalCards - 1 || totalCards === 0
               ? 'bg-slate-800/30 text-slate-400 cursor-not-allowed'
               : 'bg-slate-700/50 text-slate-200 hover:bg-slate-600/60 hover:scale-110 active:scale-95'
