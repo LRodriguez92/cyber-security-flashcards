@@ -35,6 +35,24 @@ export const useFlashcardState = () => {
     setShuffledIndices([]);
   }, []);
 
+  const resetConfidenceCategories = useCallback((categoriesToReset: string[]) => {
+    setCurrentCard(0);
+    setIsFlipped(false);
+    setScore({ correct: 0, incorrect: 0 });
+    setAnswered(false);
+    
+    setConfidenceTracking(prev => {
+      const newTracking = { ...prev };
+      categoriesToReset.forEach(category => {
+        newTracking[category as keyof ConfidenceTracking] = [];
+      });
+      return newTracking;
+    });
+    
+    setIsShuffled(false);
+    setShuffledIndices([]);
+  }, []);
+
   const nextCard = useCallback(() => {
     setCurrentCard(prev => prev + 1);
     setIsFlipped(false);
@@ -173,6 +191,7 @@ export const useFlashcardState = () => {
     
     // Actions
     resetState,
+    resetConfidenceCategories,
     nextCard,
     prevCard,
     flipCard,

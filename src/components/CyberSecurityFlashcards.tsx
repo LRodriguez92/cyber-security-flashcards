@@ -20,9 +20,11 @@ import CompletionMessage from './CompletionMessage';
 import EmptyState from './EmptyState';
 import ProgressSummary from './ProgressSummary';
 import ProgressBar from './ProgressBar';
+import ResetOptionsModal from './ResetOptionsModal';
 
 const CyberSecurityFlashcards: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
+  const [showResetOptions, setShowResetOptions] = useState(false);
   const [pendingDomains, setPendingDomains] = useState<string[]>([]);
   const [pendingConfidenceCategories, setPendingConfidenceCategories] = useState<string[]>([]);
   
@@ -38,7 +40,7 @@ const CyberSecurityFlashcards: React.FC = () => {
     isShuffled,
     
     // Actions
-    resetState,
+    resetConfidenceCategories,
     nextCard,
     prevCard,
     flipCard,
@@ -154,6 +156,16 @@ const CyberSecurityFlashcards: React.FC = () => {
   // Cancel changes
   const handleCancelChanges = () => {
     setShowFilters(false);
+  };
+
+  // Handle reset button click - show options modal
+  const handleResetClick = () => {
+    setShowResetOptions(true);
+  };
+
+  // Handle reset with selected confidence categories
+  const handleResetConfidenceCategories = (categoriesToReset: string[]) => {
+    resetConfidenceCategories(categoriesToReset);
   };
 
   return (
@@ -287,7 +299,15 @@ const CyberSecurityFlashcards: React.FC = () => {
         {/* Spacer to push navigation to bottom on mobile */}
         <div className="flex-1 min-h-[10px] sm:min-h-0"></div>
 
-        <Navigation onReset={resetState} hidden={currentMode === 'study' && isFlipped && !answered} />
+        <Navigation onReset={handleResetClick} hidden={currentMode === 'study' && isFlipped && !answered} />
+
+        {/* Reset Options Modal */}
+        <ResetOptionsModal
+          isOpen={showResetOptions}
+          onClose={() => setShowResetOptions(false)}
+          onReset={handleResetConfidenceCategories}
+          confidenceTracking={confidenceTracking}
+        />
 
         {/* Completion Message */}
         {currentCard === filteredCards.length - 1 && answered && filteredCards.length > 0 && (
