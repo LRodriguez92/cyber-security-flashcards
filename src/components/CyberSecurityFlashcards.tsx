@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, RotateCcw } from 'lucide-react';
 import { useFlashcardState } from '../hooks/useFlashcardState';
 
 import { getFilteredCards } from '../utils/cardUtils';
@@ -223,7 +223,7 @@ const CyberSecurityFlashcards: React.FC = () => {
                >
                  <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
                                    <span>
-                    {currentMode === 'review' ? 'Select Categories to Review' : 'Study Options'}
+                    {currentMode === 'review' ? 'Review Options' : 'Study Options'}
                   </span>
                </button>
             </div>
@@ -234,7 +234,7 @@ const CyberSecurityFlashcards: React.FC = () => {
         <Modal 
           isOpen={showFilters}
           onClose={() => setShowFilters(false)}
-          title={currentMode === 'review' ? 'Select Categories to Review' : 'Study Options'}
+          title={currentMode === 'review' ? 'Review Options' : 'Study Options'}
         >
           {currentMode === 'study' && (
             <>
@@ -253,12 +253,26 @@ const CyberSecurityFlashcards: React.FC = () => {
             </>
           )}
           {currentMode === 'review' && (
-            <ConfidenceFilter
-              confidenceCategories={confidenceCategories}
-              selectedConfidenceCategories={pendingConfidenceCategories}
-              confidenceTracking={confidenceTracking}
-              onConfidenceCategoryChange={handlePendingConfidenceCategoryChange}
-            />
+            <>
+              <ConfidenceFilter
+                confidenceCategories={confidenceCategories}
+                selectedConfidenceCategories={pendingConfidenceCategories}
+                confidenceTracking={confidenceTracking}
+                onConfidenceCategoryChange={handlePendingConfidenceCategoryChange}
+              />
+              
+              {/* Reset Button for Review Mode */}
+              <div className="mt-6 pt-6 border-t border-slate-600">
+                <button
+                  onClick={handleResetClick}
+                  className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-slate-900 flex items-center justify-center gap-2"
+                  aria-label="Reset confidence tracking"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>Reset Confidence Tracking</span>
+                </button>
+              </div>
+            </>
           )}
           
           {/* Confirm/Cancel Buttons */}
@@ -326,7 +340,7 @@ const CyberSecurityFlashcards: React.FC = () => {
         {/* Spacer to push navigation to bottom on mobile */}
         <div className="flex-1 min-h-[10px] sm:min-h-0"></div>
 
-        <Navigation onReset={handleResetClick} hidden={currentMode === 'study' && isFlipped && !answered} />
+        <Navigation onReset={handleResetClick} hidden={currentMode === 'study' || currentMode === 'review'} />
 
         {/* Reset Options Modal */}
         <ResetOptionsModal
