@@ -148,7 +148,13 @@ const CyberSecurityFlashcards: React.FC = () => {
       setAnswered(false);
       setIsShuffled(false);
       setShuffledIndices([]);
+      setShowFilters(false);
     } else {
+      // In review mode, check if at least one category is selected
+      if (pendingConfidenceCategories.length === 0) {
+        // Don't close modal if no categories selected
+        return;
+      }
       // Apply confidence category changes
       setSelectedConfidenceCategories(pendingConfidenceCategories);
       setCurrentCard(0);
@@ -156,8 +162,8 @@ const CyberSecurityFlashcards: React.FC = () => {
       setAnswered(false);
       setIsShuffled(false);
       setShuffledIndices([]);
+      setShowFilters(false);
     }
-    setShowFilters(false);
   };
 
   // Cancel changes
@@ -265,7 +271,12 @@ const CyberSecurityFlashcards: React.FC = () => {
             </button>
             <button
               onClick={handleConfirmChanges}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+              disabled={currentMode === 'review' && pendingConfidenceCategories.length === 0}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                currentMode === 'review' && pendingConfidenceCategories.length === 0
+                  ? 'bg-slate-500 text-slate-300 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white focus:ring-blue-400'
+              }`}
             >
               Confirm
             </button>
