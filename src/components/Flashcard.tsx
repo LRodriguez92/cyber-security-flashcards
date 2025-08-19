@@ -112,25 +112,43 @@ const Flashcard: React.FC<FlashcardProps> = ({
             const swipeThreshold = 100;
             
             if (info.offset.x > swipeThreshold && onSwipeRight) {
-              setIsSwiping(true);
-              setSwipeDirection('right');
-              setTimeout(() => {
-                setIsSwiping(false);
-                setSwipeDirection(null);
+              // Check if we can go to previous card (not at first card)
+              if (currentCard > 0) {
+                setIsSwiping(true);
+                setSwipeDirection('right');
                 setTimeout(() => {
-                  onSwipeRight();
-                }, 50);
-              }, 300);
+                  setIsSwiping(false);
+                  setSwipeDirection(null);
+                  setTimeout(() => {
+                    onSwipeRight();
+                  }, 50);
+                }, 300);
+              } else {
+                // Provide feedback that we're at the beginning
+                setSwipeDirection('right');
+                setTimeout(() => {
+                  setSwipeDirection(null);
+                }, 200);
+              }
             } else if (info.offset.x < -swipeThreshold && onSwipeLeft) {
-              setIsSwiping(true);
-              setSwipeDirection('left');
-              setTimeout(() => {
-                setIsSwiping(false);
-                setSwipeDirection(null);
+              // Check if we can go to next card (not at last card)
+              if (currentCard < totalCards - 1) {
+                setIsSwiping(true);
+                setSwipeDirection('left');
                 setTimeout(() => {
-                  onSwipeLeft();
-                }, 50);
-              }, 300);
+                  setIsSwiping(false);
+                  setSwipeDirection(null);
+                  setTimeout(() => {
+                    onSwipeLeft();
+                  }, 50);
+                }, 300);
+              } else {
+                // Provide feedback that we're at the end
+                setSwipeDirection('left');
+                setTimeout(() => {
+                  setSwipeDirection(null);
+                }, 200);
+              }
             }
           }}
          whileDrag={{ 
@@ -146,7 +164,11 @@ const Flashcard: React.FC<FlashcardProps> = ({
             scale: 0.8,
             opacity: 0
           } : {
-            x: 0,
+            x: swipeDirection === 'right' && currentCard === 0 
+              ? 20 
+              : swipeDirection === 'left' && currentCard === totalCards - 1 
+                ? -20 
+                : 0,
             rotateY: isFlipped ? 180 : 0,
             scale: 1,
             opacity: 1

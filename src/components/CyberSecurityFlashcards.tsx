@@ -90,11 +90,31 @@ const CyberSecurityFlashcards: React.FC = () => {
   // Handle confidence marking with current card data
   const handleMarkConfidence = (confidenceLevel: string) => {
     markConfidence(confidenceLevel, currentCardData);
+    
+    // Automatically advance to the next card after a short delay, but only if not at the last card
+    setTimeout(() => {
+      if (currentCard < filteredCards.length - 1) {
+        nextCard();
+      }
+    }, 500);
   };
 
   // Handle shuffle with filtered cards
   const handleShuffle = () => {
     shuffleCards(filteredCards);
+  };
+
+  // Wrapper functions with boundary checks
+  const handleNextCard = () => {
+    if (currentCard < filteredCards.length - 1) {
+      nextCard();
+    }
+  };
+
+  const handlePrevCard = () => {
+    if (currentCard > 0) {
+      prevCard();
+    }
   };
 
   // Initialize pending state when filters are opened
@@ -310,10 +330,10 @@ const CyberSecurityFlashcards: React.FC = () => {
               isShuffled={isShuffled}
               onFlip={flipCard}
               onShuffle={handleShuffle}
-              onSwipeLeft={nextCard}
-              onSwipeRight={prevCard}
-              onPrev={prevCard}
-              onNext={nextCard}
+              onSwipeLeft={handleNextCard}
+              onSwipeRight={handlePrevCard}
+              onPrev={handlePrevCard}
+              onNext={handleNextCard}
               currentCard={currentCard}
               totalCards={filteredCards.length}
             />
