@@ -19,6 +19,7 @@ import Navigation from './Navigation';
 import CompletionMessage from './CompletionMessage';
 import EmptyState from './EmptyState';
 import ProgressSummary from './ProgressSummary';
+import ProgressBar from './ProgressBar';
 
 const CyberSecurityFlashcards: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
@@ -159,7 +160,7 @@ const CyberSecurityFlashcards: React.FC = () => {
     <div className="min-h-screen min-h-dvh bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-2 sm:p-2 lg:p-3 mobile-safe-padding">
 
       
-      <div className="max-w-4xl mx-auto pt-8 sm:pt-12 lg:pt-16">
+      <div className="max-w-4xl mx-auto pt-8 sm:pt-12 lg:pt-16 pb-4 sm:pb-6">
         <Header />
 
 
@@ -169,8 +170,18 @@ const CyberSecurityFlashcards: React.FC = () => {
           onModeChange={switchMode}
         />
 
+        {/* Progress Bar */}
+        {filteredCards.length > 0 && (
+          <div className="mb-3 sm:mb-4 mt-3 sm:mt-4">
+            <ProgressBar 
+              currentCard={currentCard}
+              totalCards={filteredCards.length}
+            />
+          </div>
+        )}
+
         {/* Study Options */}
-        <div className="mb-4 sm:mb-6 mt-4 sm:mt-6">
+        <div className="mb-3 sm:mb-4 mt-3 sm:mt-4">
           <div className="flex gap-3">
             <div className="flex-1">
                              <button 
@@ -236,7 +247,7 @@ const CyberSecurityFlashcards: React.FC = () => {
 
 
         {/* Flashcard or Empty State */}
-        <div className="mt-4 sm:mt-6 flex flex-col min-h-0 flex-1">
+        <div className="mt-3 sm:mt-4 flex flex-col min-h-0 flex-1">
           {filteredCards.length > 0 ? (
           <>
             <Flashcard
@@ -254,8 +265,8 @@ const CyberSecurityFlashcards: React.FC = () => {
               totalCards={filteredCards.length}
             />
 
-            {/* Confidence Buttons - Only show in study mode */}
-            {currentMode === 'study' && isFlipped && (
+            {/* Confidence Buttons - Show in both study and review modes */}
+            {(currentMode === 'study' || currentMode === 'review') && isFlipped && (
               <div className="relative z-30">
                 <ConfidenceButtons
                   answered={answered}
@@ -274,7 +285,7 @@ const CyberSecurityFlashcards: React.FC = () => {
         )}
 
         {/* Spacer to push navigation to bottom on mobile */}
-        <div className="flex-1 min-h-[20px] sm:min-h-0"></div>
+        <div className="flex-1 min-h-[10px] sm:min-h-0"></div>
 
         <Navigation onReset={resetState} hidden={currentMode === 'study' && isFlipped && !answered} />
 
