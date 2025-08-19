@@ -11,6 +11,7 @@ import Header from './Header';
 import ModeSelector from './ModeSelector';
 import DomainFilter from './DomainFilter';
 import ConfidenceFilter from './ConfidenceFilter';
+import StudyFilter from './StudyFilter';
 import Modal from './Modal';
 
 import Flashcard from './Flashcard';
@@ -27,6 +28,7 @@ const CyberSecurityFlashcards: React.FC = () => {
   const [showResetOptions, setShowResetOptions] = useState(false);
   const [pendingDomains, setPendingDomains] = useState<string[]>([]);
   const [pendingConfidenceCategories, setPendingConfidenceCategories] = useState<string[]>([]);
+  const [pendingStudyFilter, setPendingStudyFilter] = useState<'all' | 'unanswered'>('all');
   
   const {
     // State
@@ -37,6 +39,7 @@ const CyberSecurityFlashcards: React.FC = () => {
     confidenceTracking,
     currentMode,
     selectedConfidenceCategories,
+    studyFilter,
     isShuffled,
     
     // Actions
@@ -55,6 +58,7 @@ const CyberSecurityFlashcards: React.FC = () => {
     setAnswered,
     setSelectedDomains,
     setSelectedConfidenceCategories,
+    setStudyFilter,
     setIsShuffled,
     setShuffledIndices,
   } = useFlashcardState();
@@ -74,7 +78,8 @@ const CyberSecurityFlashcards: React.FC = () => {
     selectedDomains,
     currentMode,
     selectedConfidenceCategories,
-    confidenceTracking
+    confidenceTracking,
+    studyFilter
   );
 
   // Get current card data
@@ -96,6 +101,7 @@ const CyberSecurityFlashcards: React.FC = () => {
   const handleOpenFilters = () => {
     if (currentMode === 'study') {
       setPendingDomains(selectedDomains);
+      setPendingStudyFilter(studyFilter);
     } else {
       setPendingConfidenceCategories(selectedConfidenceCategories);
     }
@@ -134,8 +140,9 @@ const CyberSecurityFlashcards: React.FC = () => {
   // Confirm and apply changes
   const handleConfirmChanges = () => {
     if (currentMode === 'study') {
-      // Apply domain changes
+      // Apply domain changes and study filter
       setSelectedDomains(pendingDomains);
+      setStudyFilter(pendingStudyFilter);
       setCurrentCard(0);
       setIsFlipped(false);
       setAnswered(false);
@@ -210,7 +217,7 @@ const CyberSecurityFlashcards: React.FC = () => {
                >
                  <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
                                    <span>
-                    {currentMode === 'review' ? 'Select Categories to Review' : 'Select Domains to Study'}
+                    {currentMode === 'review' ? 'Select Categories to Review' : 'Study Options'}
                   </span>
                </button>
             </div>
@@ -221,14 +228,23 @@ const CyberSecurityFlashcards: React.FC = () => {
         <Modal 
           isOpen={showFilters}
           onClose={() => setShowFilters(false)}
-          title={currentMode === 'review' ? 'Select Categories to Review' : 'Select Domains to Study'}
+          title={currentMode === 'review' ? 'Select Categories to Review' : 'Study Options'}
         >
           {currentMode === 'study' && (
-            <DomainFilter
-              domains={domains}
-              selectedDomains={pendingDomains}
-              onDomainChange={handlePendingDomainChange}
-            />
+            <>
+              <DomainFilter
+                domains={domains}
+                selectedDomains={pendingDomains}
+                onDomainChange={handlePendingDomainChange}
+              />
+              <div className="mt-6 pt-6 border-t border-slate-600">
+                <StudyFilter
+                  studyFilter={pendingStudyFilter}
+                  onStudyFilterChange={setPendingStudyFilter}
+                  confidenceTracking={confidenceTracking}
+                />
+              </div>
+            </>
           )}
           {currentMode === 'review' && (
             <ConfidenceFilter

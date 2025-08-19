@@ -5,7 +5,8 @@ export const getFilteredCards = (
   selectedDomains: string[],
   currentMode: 'study' | 'review',
   selectedConfidenceCategories: string[],
-  confidenceTracking: ConfidenceTracking
+  confidenceTracking: ConfidenceTracking,
+  studyFilter: 'all' | 'unanswered' = 'all'
 ): Flashcard[] => {
   const baseFiltered = selectedDomains.includes('all') 
     ? flashcards 
@@ -18,6 +19,20 @@ export const getFilteredCards = (
       return selectedConfidenceCategories.some(category => 
         confidenceTracking[category as keyof ConfidenceTracking].includes(cardId)
       );
+    });
+  }
+
+  if (currentMode === 'study' && studyFilter === 'unanswered') {
+    // Get all card IDs that have been answered
+    const answeredCardIds = new Set<string>();
+    Object.values(confidenceTracking).forEach(cardIds => {
+      cardIds.forEach((id: string) => answeredCardIds.add(id));
+    });
+
+    // Filter out cards that have been answered
+    return baseFiltered.filter((card, index) => {
+      const cardId = `${card.domain}-${index}`;
+      return !answeredCardIds.has(cardId);
     });
   }
 

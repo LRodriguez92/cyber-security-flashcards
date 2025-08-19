@@ -15,6 +15,7 @@ export const useFlashcardState = () => {
   });
   const [currentMode, setCurrentMode] = useState<StudyMode>('study');
   const [selectedConfidenceCategories, setSelectedConfidenceCategories] = useState<string[]>([]);
+  const [studyFilter, setStudyFilter] = useState<'all' | 'unanswered'>('all');
   const [isShuffled, setIsShuffled] = useState(false);
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
 
@@ -186,6 +187,7 @@ export const useFlashcardState = () => {
     confidenceTracking,
     currentMode,
     selectedConfidenceCategories,
+    studyFilter,
     isShuffled,
     shuffledIndices,
     
@@ -211,6 +213,7 @@ export const useFlashcardState = () => {
     setConfidenceTracking,
     setCurrentMode,
     setSelectedConfidenceCategories,
+    setStudyFilter,
     setIsShuffled,
     setShuffledIndices
   };
