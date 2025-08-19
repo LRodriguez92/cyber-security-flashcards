@@ -49,10 +49,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
 
   if (authState.loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 animate-pulse">
-        <div className="w-8 h-8 bg-gray-200 rounded-full" />
-        <div className="w-20 h-4 bg-gray-200 rounded" />
-      </div>
+      <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
     );
   }
 
@@ -69,7 +66,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex items-center gap-2 p-1 rounded-full hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
       >
         <div className="relative">
           {authState.user.photoURL ? (
@@ -88,20 +85,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
           )}
         </div>
         
-        <div className="flex flex-col items-start">
-          <span className="text-sm font-medium text-gray-900 truncate max-w-24">
-            {displayName}
-          </span>
-          {email && (
-            <span className="text-xs text-gray-500 truncate max-w-24">
-              {email}
-            </span>
-          )}
-        </div>
-        
         <ChevronDown 
           size={16} 
-          className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          className={`text-white/70 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
         />
       </button>
 
