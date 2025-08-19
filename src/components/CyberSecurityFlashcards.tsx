@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, RotateCcw } from 'lucide-react';
 import { useFlashcardState } from '../hooks/useFlashcardState';
+import { cloudSyncService } from '../services/cloudSync';
 
 import { getFilteredCards } from '../utils/cardUtils';
 import { domains, confidenceCategories } from '../data/flashcards';
@@ -62,6 +63,25 @@ const CyberSecurityFlashcards: React.FC = () => {
     setIsShuffled,
     setShuffledIndices,
   } = useFlashcardState();
+
+  // Initialize cloud sync and handle auth state
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        await cloudSyncService.initialize();
+      } catch (error) {
+        console.error('Failed to initialize cloud sync:', error);
+      }
+    };
+
+    initializeApp();
+
+    const unsubscribe = cloudSyncService.onAuthStateChanged((state) => {
+      console.log('Auth state changed:', state);
+    });
+
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (currentMode === 'review') {
@@ -206,7 +226,9 @@ const CyberSecurityFlashcards: React.FC = () => {
 
       
       <div className="max-w-4xl mx-auto pt-8 sm:pt-12 lg:pt-16 pb-4 sm:pb-6">
-        <Header />
+        <Header onAuthStateChange={(isAuthenticated) => {
+          console.log('Auth state changed:', isAuthenticated);
+        }} />
 
 
 

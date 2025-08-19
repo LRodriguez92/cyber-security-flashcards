@@ -14,6 +14,10 @@ An interactive flashcard application for studying cybersecurity concepts. This R
 - **Progress Monitoring**: Track your progress through the quiz
 - **Color-Coded Domains**: Each cybersecurity domain has its own color scheme
 - **Completion Summary**: Get a detailed breakdown of your performance
+- **User Authentication**: Sign in with email/password, Google, or continue as guest
+- **Progress Synchronization**: Your progress is automatically synced across devices
+- **Offline Support**: Continue studying even without an internet connection
+- **User Profiles**: Manage your account and preferences
 
 ## Cybersecurity Domains
 
@@ -30,12 +34,18 @@ An interactive flashcard application for studying cybersecurity concepts. This R
    npm install
    ```
 
-2. Start the development server:
+2. Set up Firebase (optional but recommended for full features):
+   - Follow the [Firebase Setup Guide](FIREBASE_SETUP.md) to configure authentication and database
+   - Create a `.env.local` file with your Firebase configuration
+
+3. Start the development server:
    ```bash
    npm run dev
    ```
 
-3. Open your browser and navigate to the local development URL
+4. Open your browser and navigate to the local development URL
+
+5. Click "Sign In" in the top right to create an account or sign in
 
 ## Technologies Used
 
@@ -44,6 +54,8 @@ An interactive flashcard application for studying cybersecurity concepts. This R
 - Tailwind CSS
 - Lucide React (for icons)
 - Vite (build tool)
+- Firebase (authentication & database)
+- Framer Motion (animations)
 
 ## Usage
 

@@ -11,6 +11,9 @@ export { default as CompletionMessage } from './CompletionMessage';
 export { default as EmptyState } from './EmptyState';
 export { default as Modal } from './Modal';
 export { default as CyberSecurityFlashcards } from './CyberSecurityFlashcards';
+export { default as OfflineIndicator } from './OfflineIndicator';
+export { AuthModal } from './AuthModal';
+export { UserProfile } from './UserProfile';
 
 // Loading States and Feedback Components
 export { 

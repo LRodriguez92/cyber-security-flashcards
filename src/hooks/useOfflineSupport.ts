@@ -1,16 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const useOfflineSupport = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pendingSync, setPendingSync] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      if (pendingSync) {
-        // Sync pending data
-        setPendingSync(false);
-      }
     };
     
     const handleOffline = () => {
@@ -24,14 +19,18 @@ export const useOfflineSupport = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [pendingSync]);
+  }, []); // Empty dependency array - event listeners only set up once
 
-  return { isOnline, pendingSync };
+  return { isOnline };
 };
 
 // Local storage utilities for offline support
 export const useLocalStorage = <T>(key: string, initialValue: T) => {
   const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === 'undefined') {
+      return initialValue;
+    }
+    
     try {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
@@ -41,33 +40,21 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
     }
   });
 
-  const setValue = (value: T | ((val: T) => T)) => {
+  // Use ref to track current value without causing re-renders
+  const storedValueRef = useRef(storedValue);
+  storedValueRef.current = storedValue;
+
+  const setValue = useCallback((value: T | ((val: T) => T)) => {
     try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      const valueToStore = value instanceof Function ? value(storedValueRef.current) : value;
       setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      }
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error);
     }
-  };
+  }, [key]);
 
   return [storedValue, setValue] as const;
 };
-
-// Offline indicator component hook
-export const useOfflineIndicator = () => {
-  const { isOnline } = useOfflineSupport();
-  
-  const OfflineIndicator = () => (
-    !isOnline ? (
-      <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 bg-yellow-600 text-white p-3 rounded-lg shadow-lg z-50 animate-in slide-in-from-top-2">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-          <span className="text-sm font-medium">You're offline - changes will be saved locally</span>
-        </div>
-      </div>
-    ) : null
-  );
-  
-  return { isOnline, OfflineIndicator };
-}; 
