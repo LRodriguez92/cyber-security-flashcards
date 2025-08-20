@@ -18,10 +18,9 @@ export const getFilteredCards = (
       return [];
     }
     // Filter cards that are in the selected confidence categories
-    return baseFiltered.filter((card, index) => {
-      const cardId = `${card.domain}-${index}`;
+    return baseFiltered.filter((card) => {
       return selectedConfidenceCategories.some(category => 
-        confidenceTracking[category as keyof ConfidenceTracking].includes(cardId)
+        confidenceTracking[category as keyof ConfidenceTracking].includes(card.id)
       );
     });
   }
@@ -34,9 +33,8 @@ export const getFilteredCards = (
     });
 
     // Filter out cards that have been answered
-    return baseFiltered.filter((card, index) => {
-      const cardId = `${card.domain}-${index}`;
-      return !answeredCardIds.has(cardId);
+    return baseFiltered.filter((card) => {
+      return !answeredCardIds.has(card.id);
     });
   }
 
