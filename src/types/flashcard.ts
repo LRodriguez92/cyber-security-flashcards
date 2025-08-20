@@ -50,7 +50,6 @@ export interface UserProgress {
   selectedConfidenceCategories: string[];
   studyFilter: 'all' | 'unanswered';
   lastStudied: Date;
-  totalStudyTime: number;
   streakDays: number;
   completedCards: string[]; // Card IDs that have been answered
   studySessions: StudySession[];

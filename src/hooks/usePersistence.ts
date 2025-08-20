@@ -32,6 +32,12 @@ export const usePersistence = () => {
         lastSyncTimestamp: new Date(),
       };
       
+      // Validate that all required fields are present and not undefined
+      if (!updatedProgress.userId || !updatedProgress.confidenceTracking || !updatedProgress.score) {
+        console.error('❌ Invalid progress data:', updatedProgress);
+        throw new Error('Invalid progress data');
+      }
+      
       setUserProgress(updatedProgress);
       
       const authState = cloudSyncService.getAuthState();
@@ -93,7 +99,6 @@ export const usePersistence = () => {
           selectedConfidenceCategories: [],
           studyFilter: 'all',
           lastStudied: new Date(),
-          totalStudyTime: 0,
           streakDays: 0,
           completedCards: [],
           studySessions: [],
@@ -194,8 +199,6 @@ export const usePersistence = () => {
             ? { ...session, ...finalStats, endTime: new Date() }
             : session
         ),
-        totalStudyTime: userProgress.totalStudyTime + 
-          (new Date().getTime() - sessionData.sessionStartTime.getTime()),
         streakDays: calculateStreak(),
         lastStudied: new Date(),
         lastSyncTimestamp: new Date(),
@@ -211,7 +214,7 @@ export const usePersistence = () => {
       console.error('Failed to end study session:', err);
       setError(err instanceof Error ? err.message : 'Failed to end study session');
     }
-  }, [userProgress, sessionData.sessionStartTime, calculateStreak]);
+  }, [userProgress, calculateStreak]);
 
   // Initialize cloud sync and load data on mount
   useEffect(() => {

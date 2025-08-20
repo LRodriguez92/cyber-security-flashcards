@@ -398,15 +398,33 @@ export class CloudSyncService {
     try {
       const progressDoc = doc(firebaseDb, 'users', this.userId!, 'progress', 'current');
 
-      // Update progress
-      await setDoc(progressDoc, {
-        ...progress,
+      // Ensure all required fields are present and valid
+      const validatedProgress = {
+        userId: progress.userId || this.userId,
+        confidenceTracking: progress.confidenceTracking || {
+          'knew-it': [],
+          'quick-think': [],
+          'long-think': [],
+          'peeked': [],
+        },
+        score: progress.score || { correct: 0, incorrect: 0 },
+        selectedDomains: progress.selectedDomains || ['all'],
+        selectedConfidenceCategories: progress.selectedConfidenceCategories || [],
+        studyFilter: progress.studyFilter || 'all',
+        lastStudied: progress.lastStudied || new Date(),
+        streakDays: progress.streakDays || 0,
+        completedCards: progress.completedCards || [],
+        studySessions: progress.studySessions || [],
         lastSyncTimestamp: new Date(),
         version: '1.0.0',
-      }, { merge: true });
+      };
+
+      // Update progress
+      await setDoc(progressDoc, validatedProgress, { merge: true });
 
     } catch (error) {
       console.error('❌ Failed to sync progress:', error);
+      console.error('Progress data that failed to sync:', progress);
       // Don't throw error for sync failures - let the app continue working offline
       // The error will be logged but won't break the user experience
     }
