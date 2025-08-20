@@ -19,15 +19,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    loading: true,
-    error: null
-  });
 
   useEffect(() => {
     const unsubscribe = cloudSyncService.onAuthStateChanged((state) => {
-      setAuthState(state);
       if (state.user && !state.loading) {
         onAuthSuccess();
         onClose();

@@ -108,7 +108,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={0.1}
-          onDragEnd={(event, info) => {
+          onDragEnd={(_, info) => {
             const swipeThreshold = 100;
             
             if (info.offset.x > swipeThreshold && onSwipeRight) {

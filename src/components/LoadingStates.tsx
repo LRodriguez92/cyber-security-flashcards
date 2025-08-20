@@ -1,5 +1,4 @@
-import React from 'react';
-import { X, Clock } from 'lucide-react';
+import { X } from 'lucide-react';
 
 // Loading skeleton component
 export const CardSkeleton = () => (

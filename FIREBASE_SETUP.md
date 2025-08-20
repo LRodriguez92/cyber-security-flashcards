@@ -18,7 +18,6 @@ This guide will help you set up Firebase authentication for the Cyber Security F
 4. Enable the following providers:
    - **Email/Password**: Click "Enable" and save
    - **Google**: Click "Enable", add your authorized domain, and save
-   - **Anonymous**: Click "Enable" and save
 
 ## 3. Set up Firestore Database
 
