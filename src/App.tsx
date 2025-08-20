@@ -1,14 +1,12 @@
-import CyberSecurityFlashcards from './components/CyberSecurityFlashcards'
+import { AuthGuard, CyberSecurityFlashcards } from './components'
 import './App.css'
-import OfflineIndicator from './components/OfflineIndicator';
-import SyncStatus from './components/SyncStatus';
 
 function App() {
   return (
     <div className="App">
-      <CyberSecurityFlashcards />
-      <OfflineIndicator />
-      <SyncStatus />
+      <AuthGuard>
+        <CyberSecurityFlashcards />
+      </AuthGuard>
     </div>
   );
 }

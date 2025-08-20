@@ -1,17 +1,8 @@
-import type { UserProgress, UserProfile } from '../types/flashcard';
-import type { User as FirebaseUser, AuthError } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, enableNetwork } from 'firebase/firestore';
-import { 
-  getAuth, 
-  signInAnonymously, 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut
-} from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
+import type { User, AuthError } from 'firebase/auth';
+import type { UserProgress, UserProfile } from '../types/flashcard';
 
 // Firebase configuration
 const FIREBASE_CONFIG = {
@@ -39,14 +30,19 @@ let db: ReturnType<typeof getFirestore> | null = null;
 let auth: ReturnType<typeof getAuth> | null = null;
 let googleProvider: GoogleAuthProvider | null = null;
 
-// Connection state management
-let isOnline = navigator.onLine;
-const MAX_RETRY_ATTEMPTS = 3;
-const RETRY_DELAY = 2000; // 2 seconds
-
 const initializeFirebase = () => {
   if (!app) {
+    console.log('🔧 Checking Firebase configuration...');
     if (!isFirebaseConfigured()) {
+      console.error('❌ Firebase configuration missing!');
+      console.error('Missing environment variables:', {
+        hasApiKey: !!FIREBASE_CONFIG.apiKey,
+        hasAuthDomain: !!FIREBASE_CONFIG.authDomain,
+        hasProjectId: !!FIREBASE_CONFIG.projectId,
+        hasStorageBucket: !!FIREBASE_CONFIG.storageBucket,
+        hasMessagingSenderId: !!FIREBASE_CONFIG.messagingSenderId,
+        hasAppId: !!FIREBASE_CONFIG.appId
+      });
       throw new Error('Firebase not configured. Please set up environment variables. See FIREBASE_SETUP.md for instructions.');
     }
     
@@ -60,22 +56,21 @@ const initializeFirebase = () => {
       });
       
       app = initializeApp(FIREBASE_CONFIG);
-      db = getFirestore(app);
-      auth = getAuth(app);
-      googleProvider = new GoogleAuthProvider();
+      console.log('✅ Firebase app initialized');
       
-      // Add some debugging for Firestore
-      console.log('✅ Firebase initialized successfully');
-      console.log('📊 Firestore instance created');
-      console.log('🔐 Auth instance created');
+      db = getFirestore(app);
+      console.log('✅ Firestore instance created');
+      
+      auth = getAuth(app);
+      console.log('✅ Auth instance created');
+      
+      googleProvider = new GoogleAuthProvider();
+      console.log('✅ Google provider created');
       
       // Test basic Firestore connectivity
       if (db) {
         console.log('🔍 Firestore database reference obtained');
       }
-      
-      // Set up network state listeners
-      setupNetworkListeners();
       
     } catch (error) {
       console.error('❌ Firebase initialization failed:', error);
@@ -90,83 +85,21 @@ const initializeFirebase = () => {
   
   // At this point, all instances should be initialized
   if (!app || !db || !auth || !googleProvider) {
+    console.error('❌ Firebase initialization incomplete:', {
+      hasApp: !!app,
+      hasDb: !!db,
+      hasAuth: !!auth,
+      hasGoogleProvider: !!googleProvider
+    });
     throw new Error('Firebase initialization incomplete');
   }
   
+  console.log('✅ Firebase initialization complete');
   return { app, db, auth, googleProvider };
 };
 
-const setupNetworkListeners = () => {
-  // Listen for online/offline events
-  window.addEventListener('online', () => {
-    console.log('🌐 Network: Online');
-    isOnline = true;
-    // Re-enable Firestore network
-    if (db) {
-      enableNetwork(db).then(() => {
-        console.log('✅ Firestore network re-enabled');
-      }).catch(error => {
-        console.error('❌ Failed to re-enable Firestore network:', error);
-      });
-    }
-  });
-
-  window.addEventListener('offline', () => {
-    console.log('📴 Network: Offline');
-    isOnline = false;
-  });
-};
-
-const waitForConnection = async (): Promise<boolean> => {
-  if (isOnline && db) {
-    try {
-      // Test connection with a simple operation
-      await enableNetwork(db);
-      return true;
-    } catch (error) {
-      console.warn('⚠️ Connection test failed:', error);
-      return false;
-    }
-  }
-  return false;
-};
-
-const retryOperation = async <T>(
-  operation: () => Promise<T>,
-  operationName: string,
-  maxRetries: number = MAX_RETRY_ATTEMPTS
-): Promise<T> => {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      // Check if we're online before attempting
-      if (!isOnline) {
-        console.log(`⏳ ${operationName}: Waiting for network connection...`);
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-        continue;
-      }
-
-      return await operation();
-    } catch (error) {
-      const isLastAttempt = attempt === maxRetries;
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      console.error(`❌ ${operationName} attempt ${attempt}/${maxRetries} failed:`, errorMessage);
-      
-      if (isLastAttempt) {
-        throw error;
-      }
-      
-      // Wait before retrying
-      console.log(`⏳ ${operationName}: Retrying in ${RETRY_DELAY}ms...`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-    }
-  }
-  
-  throw new Error(`${operationName} failed after ${maxRetries} attempts`);
-};
-
 export interface AuthState {
-  user: FirebaseUser | null;
+  user: User | null;
   loading: boolean;
   error: string | null;
 }
@@ -217,11 +150,15 @@ export class CloudSyncService {
 
   private async performInitialization(): Promise<void> {
     try {
+      console.log('🔧 Starting cloud sync initialization...');
+      
       // Initialize Firebase
       const { auth: firebaseAuth } = initializeFirebase();
+      console.log('✅ Firebase initialized, setting up auth listener...');
 
       // Listen for auth state changes
       onAuthStateChanged(firebaseAuth, (user) => {
+        console.log('🔄 Auth state changed:', user ? `User logged in (${user.uid})` : 'User logged out');
         this.userId = user?.uid || null;
         this.authState = {
           user,
@@ -229,10 +166,10 @@ export class CloudSyncService {
           error: null
         };
         this.notifyAuthStateListeners();
-        console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
+        console.log('✅ Auth state updated and listeners notified');
       }, (error) => {
         // Handle auth state change errors
-        console.error('Auth state change error:', error);
+        console.error('❌ Auth state change error:', error);
         this.authState.error = error.message;
         this.authState.loading = false;
         this.notifyAuthStateListeners();
@@ -437,16 +374,14 @@ export class CloudSyncService {
     if (!this.userId) return null;
 
     try {
-      return await retryOperation(async () => {
-        const userDoc = doc(firebaseDb, 'users', this.userId!);
-        const userSnap = await getDoc(userDoc);
-        
-        if (userSnap.exists()) {
-          return userSnap.data() as UserProfile;
-        }
-        
-        return null;
-      }, 'Fetch user profile');
+      const userDoc = doc(firebaseDb, 'users', this.userId!);
+      const userSnap = await getDoc(userDoc);
+      
+      if (userSnap.exists()) {
+        return userSnap.data() as UserProfile;
+      }
+      
+      return null;
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
       // Return null instead of throwing - allows app to continue with local data
@@ -461,13 +396,11 @@ export class CloudSyncService {
     if (!this.userId) throw new Error('User not authenticated');
 
     try {
-      await retryOperation(async () => {
-        const userDoc = doc(firebaseDb, 'users', this.userId!);
-        await updateDoc(userDoc, {
-          ...updates,
-          lastActive: new Date()
-        });
-      }, 'Update user profile');
+      const userDoc = doc(firebaseDb, 'users', this.userId!);
+      await updateDoc(userDoc, {
+        ...updates,
+        lastActive: new Date()
+      });
     } catch (error) {
       console.error('Failed to update user profile:', error);
       // Don't throw error for profile updates - let the app continue working
@@ -475,32 +408,35 @@ export class CloudSyncService {
   }
 
   async syncProgress(progress: UserProgress): Promise<void> {
+    console.log('☁️ CloudSyncService.syncProgress called for user:', this.userId);
+    
     await this.ensureInitialized();
     const { db: firebaseDb } = initializeFirebase();
     
     if (!isFirebaseConfigured()) {
+      console.error('❌ Firebase not configured');
       throw new Error('Firebase not configured');
     }
     
     if (!this.userId) {
+      console.error('❌ User not authenticated');
       throw new Error('User not authenticated');
     }
 
     try {
-      await retryOperation(async () => {
-        const progressDoc = doc(firebaseDb, 'users', this.userId!, 'progress', 'current');
+      const progressDoc = doc(firebaseDb, 'users', this.userId!, 'progress', 'current');
+      console.log('📄 Writing to Firestore document:', `users/${this.userId}/progress/current`);
 
-        // Update progress
-        await setDoc(progressDoc, {
-          ...progress,
-          lastSyncTimestamp: new Date(),
-          version: '1.0.0',
-        }, { merge: true });
+      // Update progress
+      await setDoc(progressDoc, {
+        ...progress,
+        lastSyncTimestamp: new Date(),
+        version: '1.0.0',
+      }, { merge: true });
 
-        console.log('Progress synced to cloud');
-      }, 'Sync progress');
+      console.log('✅ Progress synced to cloud successfully');
     } catch (error) {
-      console.error('Failed to sync progress:', error);
+      console.error('❌ Failed to sync progress:', error);
       // Don't throw error for sync failures - let the app continue working offline
       // The error will be logged but won't break the user experience
     }
@@ -519,16 +455,14 @@ export class CloudSyncService {
     }
 
     try {
-      return await retryOperation(async () => {
-        const progressDoc = doc(firebaseDb, 'users', this.userId!, 'progress', 'current');
-        const docSnap = await getDoc(progressDoc);
+      const progressDoc = doc(firebaseDb, 'users', this.userId!, 'progress', 'current');
+      const docSnap = await getDoc(progressDoc);
 
-        if (docSnap.exists()) {
-          return docSnap.data() as UserProgress;
-        }
+      if (docSnap.exists()) {
+        return docSnap.data() as UserProgress;
+      }
 
-        return null;
-      }, 'Fetch progress');
+      return null;
     } catch (error) {
       console.error('Failed to fetch progress:', error);
       // Return null instead of throwing - allows app to continue with local data
@@ -540,12 +474,12 @@ export class CloudSyncService {
 
   // Connection status methods
   isOnline(): boolean {
-    return isOnline;
+    return true; // Always online in cloud-only mode
   }
 
   async testConnection(): Promise<boolean> {
     try {
-      await waitForConnection();
+      // In cloud-only mode, we assume connection is always available
       return true;
     } catch (error) {
       console.error('Connection test failed:', error);

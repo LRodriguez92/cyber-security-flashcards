@@ -3,7 +3,7 @@ import type { ConfidenceTracking } from '../types/flashcard';
 
 interface StudyFilterProps {
   studyFilter: 'all' | 'unanswered';
-  onStudyFilterChange: (filter: 'all' | 'unanswered') => void;
+  onStudyFilterChange: (filter: 'all' | 'unanswered') => Promise<void>;
   confidenceTracking: ConfidenceTracking;
 }
 
@@ -18,6 +18,10 @@ const StudyFilter: React.FC<StudyFilterProps> = ({
     cardIds.forEach((id: string) => allCardIds.add(id));
   });
 
+  const handleFilterChange = async (filter: 'all' | 'unanswered') => {
+    await onStudyFilterChange(filter);
+  };
+
   return (
     <div className="space-y-4">
       <div className="text-sm text-slate-300 mb-3">
@@ -31,7 +35,7 @@ const StudyFilter: React.FC<StudyFilterProps> = ({
             name="studyFilter"
             value="all"
             checked={studyFilter === 'all'}
-            onChange={(e) => onStudyFilterChange(e.target.value as 'all' | 'unanswered')}
+            onChange={(e) => handleFilterChange(e.target.value as 'all' | 'unanswered')}
             className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 focus:ring-blue-500 focus:ring-2"
           />
           <div className="flex-1">
@@ -46,7 +50,7 @@ const StudyFilter: React.FC<StudyFilterProps> = ({
             name="studyFilter"
             value="unanswered"
             checked={studyFilter === 'unanswered'}
-            onChange={(e) => onStudyFilterChange(e.target.value as 'all' | 'unanswered')}
+            onChange={(e) => handleFilterChange(e.target.value as 'all' | 'unanswered')}
             className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 focus:ring-blue-500 focus:ring-2"
           />
           <div className="flex-1">

@@ -68,18 +68,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
     }
   };
 
-  const handleAnonymousSignIn = async () => {
-    setError(null);
-    setLoading(true);
 
-    try {
-      await cloudSyncService.signInAnonymously();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const resetForm = () => {
     setEmail('');
@@ -285,14 +274,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
                 <span className="text-gray-700 font-medium">Continue with Google</span>
               </button>
 
-              <button
-                onClick={handleAnonymousSignIn}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 bg-white"
-              >
-                <User size={16} className="flex-shrink-0" />
-                <span className="font-medium">Continue as Guest</span>
-              </button>
+
             </div>
 
             {/* Footer */}

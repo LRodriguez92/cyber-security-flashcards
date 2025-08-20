@@ -69,14 +69,6 @@ export interface StudySession {
   mode: StudyMode;
 }
 
-export interface SyncStatus {
-  isOnline: boolean;
-  lastSync: Date | null;
-  pendingChanges: boolean;
-  syncInProgress: boolean;
-  error: string | null;
-}
-
 export interface UserProfile {
   id: string;
   email?: string;

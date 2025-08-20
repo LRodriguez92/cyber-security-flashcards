@@ -1,76 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useLocalStorage } from './useOfflineSupport';
-import type { UserProgress, SyncStatus, UserProfile } from '../types/flashcard';
+import type { UserProgress, UserProfile } from '../types/flashcard';
 import { cloudSyncService } from '../services/cloudSync';
 
-// Storage keys
-const STORAGE_KEYS = {
-  USER_PROGRESS: 'flashcard-user-progress',
-  USER_PROFILE: 'flashcard-user-profile',
-  SYNC_STATUS: 'flashcard-sync-status',
-} as const;
-
-// Generate anonymous user ID
-const generateUserId = (): string => {
-  const existingId = localStorage.getItem('flashcard-anonymous-user-id');
-  if (existingId) return existingId;
-  
-  const newId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  localStorage.setItem('flashcard-anonymous-user-id', newId);
-  return newId;
-};
-
-// Online-only persistence hook
+// Cloud-only persistence hook
 export const usePersistence = () => {
-  const [userProfile, setUserProfile] = useLocalStorage<UserProfile>(
-    STORAGE_KEYS.USER_PROFILE,
-    {
-      id: generateUserId(),
-      createdAt: new Date(),
-      lastActive: new Date(),
-      preferences: {
-        theme: 'auto',
-        notifications: true,
-        autoSync: true,
-      },
-    }
-  );
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
 
-  const [userProgress, setUserProgress] = useLocalStorage<UserProgress>(
-    STORAGE_KEYS.USER_PROGRESS,
-    {
-      userId: userProfile.id,
-      confidenceTracking: {
-        'knew-it': [],
-        'quick-think': [],
-        'long-think': [],
-        'peeked': [],
-      },
-      score: { correct: 0, incorrect: 0 },
-      selectedDomains: ['all'],
-      selectedConfidenceCategories: [],
-      studyFilter: 'all',
-      currentMode: 'study',
-      lastStudied: new Date(),
-      totalStudyTime: 0,
-      streakDays: 0,
-      completedCards: [],
-      studySessions: [],
-      lastSyncTimestamp: new Date(),
-      version: '1.0.0',
-    }
-  );
-
-  const [syncStatus, setSyncStatus] = useLocalStorage<SyncStatus>(
-    STORAGE_KEYS.SYNC_STATUS,
-    {
-      isOnline: navigator.onLine,
-      lastSync: null,
-      pendingChanges: false,
-      syncInProgress: false,
-      error: null,
-    }
-  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Track session data (not persisted, just for current session)
   const [sessionData, setSessionData] = useState({
@@ -79,60 +17,66 @@ export const usePersistence = () => {
     cardsInSession: 0,
   });
 
-  // Sync to cloud function
-  const syncToCloud = useCallback(async (progress: UserProgress) => {
-    if (!navigator.onLine) {
-      console.log('Offline, cannot sync');
-      return;
-    }
-    
-    const authState = cloudSyncService.getAuthState();
-    if (!authState.user) {
-      console.log('User not authenticated, cannot sync');
-      return;
-    }
+  // Save progress to cloud
+  const saveProgress = useCallback(async (updates: Partial<UserProgress>) => {
+    console.log('🔄 saveProgress called with updates:', updates);
     
     try {
-      console.log('🔄 Starting cloud sync...');
-      setSyncStatus(prev => ({ ...prev, syncInProgress: true }));
+      if (!userProgress) {
+        console.error('❌ User progress not initialized');
+        throw new Error('User progress not initialized');
+      }
       
-      await cloudSyncService.syncProgress(progress);
+      const updatedProgress: UserProgress = {
+        ...userProgress,
+        ...updates,
+        lastStudied: new Date(),
+        lastSyncTimestamp: new Date(),
+      };
       
-      console.log('✅ Cloud sync completed successfully');
-      setSyncStatus(prev => ({ 
-        ...prev, 
-        syncInProgress: false, 
-        lastSync: new Date(),
-        error: null 
-      }));
-    } catch (error) {
-      console.error('❌ Failed to sync to cloud:', error);
-      setSyncStatus(prev => ({ 
-        ...prev, 
-        syncInProgress: false, 
-        error: error instanceof Error ? error.message : 'Sync failed' 
-      }));
+      console.log('📊 Setting updated progress:', updatedProgress);
+      setUserProgress(updatedProgress);
+      
+      const authState = cloudSyncService.getAuthState();
+      console.log('🔐 Auth state:', authState);
+      
+      if (authState.user) {
+        console.log('☁️ Syncing to cloud...');
+        await cloudSyncService.syncProgress(updatedProgress);
+        console.log('✅ Cloud sync completed');
+      } else {
+        console.log('⚠️ No authenticated user, skipping cloud sync');
+      }
+    } catch (err) {
+      console.error('❌ Failed to save progress:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save progress');
     }
-  }, [setSyncStatus]);
+  }, [userProgress]);
 
-  // Fetch from cloud function
-  const fetchFromCloud = useCallback(async () => {
-    if (!navigator.onLine) {
-      console.log('Offline, cannot fetch from cloud');
-      return;
-    }
-    
-    const authState = cloudSyncService.getAuthState();
-    if (!authState.user) {
-      console.log('User not authenticated, cannot fetch from cloud');
-      return;
-    }
-    
+  // Load progress from cloud
+  const loadProgress = useCallback(async () => {
     try {
-      setSyncStatus(prev => ({ ...prev, syncInProgress: true }));
-      const cloudProgress = await cloudSyncService.fetchProgress();
+      setIsLoading(true);
+      setError(null);
       
+      const authState = cloudSyncService.getAuthState();
+      if (!authState.user) {
+        console.log('No authenticated user found');
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('Loading progress for user:', authState.user.uid);
+      
+      // Load user profile
+      const profile = await cloudSyncService.getUserProfile();
+      if (profile) {
+        setUserProfile(profile);
+      }
+      
+      const cloudProgress = await cloudSyncService.fetchProgress();
       if (cloudProgress) {
+        console.log('Found existing progress, loading...');
         // Convert dates in cloud progress
         const convertedCloudProgress: UserProgress = {
           ...cloudProgress,
@@ -145,62 +89,57 @@ export const usePersistence = () => {
           })) : cloudProgress.studySessions,
         };
         
-        // Use cloud data but preserve local UI preferences
-        const updatedProgress: UserProgress = {
-          ...convertedCloudProgress,
-          // Keep local UI preferences
-          selectedDomains: userProgress.selectedDomains,
-          selectedConfidenceCategories: userProgress.selectedConfidenceCategories,
-          studyFilter: userProgress.studyFilter,
-          currentMode: userProgress.currentMode,
+        setUserProgress(convertedCloudProgress);
+      } else {
+        console.log('No existing progress found, creating default...');
+        // Create default progress for new user
+        const defaultProgress: UserProgress = {
+          userId: authState.user.uid,
+          confidenceTracking: {
+            'knew-it': [],
+            'quick-think': [],
+            'long-think': [],
+            'peeked': [],
+          },
+          score: { correct: 0, incorrect: 0 },
+          selectedDomains: ['all'],
+          selectedConfidenceCategories: [],
+          studyFilter: 'all',
+          currentMode: 'study',
+          lastStudied: new Date(),
+          totalStudyTime: 0,
+          streakDays: 0,
+          completedCards: [],
+          studySessions: [],
           lastSyncTimestamp: new Date(),
+          version: '1.0.0',
         };
-        
-        setUserProgress(updatedProgress);
+        setUserProgress(defaultProgress);
+        await cloudSyncService.syncProgress(defaultProgress);
       }
-      
-      setSyncStatus(prev => ({ 
-        ...prev, 
-        syncInProgress: false, 
-        lastSync: new Date(),
-        error: null 
-      }));
-    } catch (error) {
-      console.error('Failed to fetch from cloud:', error);
-      setSyncStatus(prev => ({ 
-        ...prev, 
-        syncInProgress: false, 
-        error: error instanceof Error ? error.message : 'Fetch failed' 
-      }));
+    } catch (err) {
+      console.error('Failed to load progress:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load progress');
+    } finally {
+      setIsLoading(false);
     }
-  }, [setUserProgress, setSyncStatus, userProgress]);
-
-  // Save progress and sync immediately
-  const saveProgress = useCallback(async (updates: Partial<UserProgress>) => {
-    const updatedProgress = {
-      ...userProgress,
-      ...updates,
-      lastStudied: new Date(),
-      lastSyncTimestamp: new Date(),
-    };
-    
-    // Save to localStorage
-    setUserProgress(updatedProgress);
-    
-    // Sync to cloud immediately
-    await syncToCloud(updatedProgress);
-  }, [userProgress, setUserProgress, syncToCloud]);
+  }, []);
 
   // Update last active timestamp
   const updateLastActive = useCallback(() => {
-    setUserProfile(prev => ({
-      ...prev,
-      lastActive: new Date(),
-    }));
-  }, [setUserProfile]);
+    setUserProfile(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        lastActive: new Date(),
+      };
+    });
+  }, []);
 
   // Calculate study streak
   const calculateStreak = useCallback(() => {
+    if (!userProgress) return 0;
+    
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -216,10 +155,12 @@ export const usePersistence = () => {
     } else {
       return 1;
     }
-  }, [userProgress.lastStudied, userProgress.streakDays]);
+  }, [userProgress]);
 
   // Start new study session
   const startStudySession = useCallback((mode: 'study' | 'review', domains: string[]) => {
+    if (!userProgress) return null;
+    
     const sessionId = `session_${Date.now()}`;
     const newSession = {
       id: sessionId,
@@ -231,10 +172,13 @@ export const usePersistence = () => {
       mode,
     };
 
-    setUserProgress(prev => ({
-      ...prev,
-      studySessions: [...prev.studySessions, newSession],
-    }));
+    setUserProgress(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        studySessions: [...prev.studySessions, newSession],
+      };
+    });
 
     setSessionData(prev => ({
       ...prev,
@@ -244,7 +188,7 @@ export const usePersistence = () => {
     }));
 
     return sessionId;
-  }, [setUserProgress]);
+  }, [userProgress]);
 
   // End study session
   const endStudySession = useCallback(async (sessionId: string, finalStats: {
@@ -252,73 +196,92 @@ export const usePersistence = () => {
     correctAnswers: number;
     incorrectAnswers: number;
   }) => {
-    const updatedProgress = {
-      ...userProgress,
-      studySessions: userProgress.studySessions.map(session =>
-        session.id === sessionId
-          ? { ...session, ...finalStats, endTime: new Date() }
-          : session
-      ),
-      totalStudyTime: userProgress.totalStudyTime + 
-        (new Date().getTime() - sessionData.sessionStartTime.getTime()),
-      streakDays: calculateStreak(),
-      lastStudied: new Date(),
-      lastSyncTimestamp: new Date(),
-    };
+    try {
+      if (!userProgress) {
+        throw new Error('User progress not initialized');
+      }
+      
+      const updatedProgress: UserProgress = {
+        ...userProgress,
+        studySessions: userProgress.studySessions.map(session =>
+          session.id === sessionId
+            ? { ...session, ...finalStats, endTime: new Date() }
+            : session
+        ),
+        totalStudyTime: userProgress.totalStudyTime + 
+          (new Date().getTime() - sessionData.sessionStartTime.getTime()),
+        streakDays: calculateStreak(),
+        lastStudied: new Date(),
+        lastSyncTimestamp: new Date(),
+      };
 
-    setUserProgress(updatedProgress);
-    await syncToCloud(updatedProgress);
-  }, [userProgress, sessionData.sessionStartTime, calculateStreak, setUserProgress, syncToCloud]);
+      setUserProgress(updatedProgress);
+      
+      const authState = cloudSyncService.getAuthState();
+      if (authState.user) {
+        await cloudSyncService.syncProgress(updatedProgress);
+      }
+    } catch (err) {
+      console.error('Failed to end study session:', err);
+      setError(err instanceof Error ? err.message : 'Failed to end study session');
+    }
+  }, [userProgress, sessionData.sessionStartTime, calculateStreak]);
 
-  // Initialize cloud sync and fetch data on mount
+  // Initialize cloud sync and load data on mount
   useEffect(() => {
-    const initializeSync = async () => {
+    const initialize = async () => {
       try {
         await cloudSyncService.initialize();
-        const authState = cloudSyncService.getAuthState();
-        if (authState.user) {
-          await fetchFromCloud();
-        }
-      } catch (error) {
-        console.error('Failed to initialize sync:', error);
+        // Don't call loadProgress here - it will be called when auth state changes
+      } catch (err) {
+        console.error('Failed to initialize:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize');
+        setIsLoading(false);
       }
     };
 
-    initializeSync();
+    initialize();
   }, []);
 
-  // Manual sync function for UI
-  const manualSync = useCallback(async () => {
-    try {
-      console.log('🔄 Manual sync triggered');
-      await syncToCloud(userProgress);
-      await fetchFromCloud();
-    } catch (error) {
-      console.error('Manual sync failed:', error);
-    }
-  }, [userProgress, syncToCloud, fetchFromCloud]);
+  // Listen for auth state changes and load progress when user is authenticated
+  useEffect(() => {
+    const unsubscribe = cloudSyncService.onAuthStateChanged(async (authState) => {
+      if (!authState.loading && authState.user) {
+        try {
+          await loadProgress();
+        } catch (err) {
+          console.error('Failed to load progress after auth:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load progress');
+          setIsLoading(false);
+        }
+      } else if (!authState.loading && !authState.user) {
+        // User is not authenticated, stop loading
+        setIsLoading(false);
+      }
+    });
+
+    return unsubscribe;
+  }, [loadProgress]);
 
   return {
     // Data
     userProgress,
     userProfile,
-    syncStatus,
     sessionData,
+    isLoading,
+    error,
 
     // Actions
     saveProgress,
+    loadProgress,
     updateLastActive,
     startStudySession,
     endStudySession,
     calculateStreak,
-    syncToCloud,
-    fetchFromCloud,
-    manualSync,
 
     // Setters
     setUserProgress,
     setUserProfile,
-    setSyncStatus,
     setSessionData,
   };
 };

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { ChevronDown, LogOut, Settings, Crown, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, LogOut, Settings, ChevronDown, Crown, Calendar, Cloud } from 'lucide-react';
 import { cloudSyncService, type AuthState } from '../services/cloudSync';
 import type { UserProfile as UserProfileType } from '../types/flashcard';
-import { usePersistence } from '../hooks/usePersistence';
 
 interface UserProfileProps {
   onSignOut?: () => void;
@@ -17,7 +16,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
     error: null
   });
   const [userProfile, setUserProfile] = useState<UserProfileType | null>(null);
-  const { syncStatus, manualSync, userProgress } = usePersistence();
 
   useEffect(() => {
     const unsubscribe = cloudSyncService.onAuthStateChanged((state) => {
@@ -49,15 +47,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
     }
   };
 
-  const handleManualSync = async () => {
-    try {
-      await manualSync();
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Manual sync failed:', error);
-    }
-  };
-
   if (authState.loading) {
     return (
       <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
@@ -73,10 +62,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
   const isAnonymous = authState.user.isAnonymous;
   const createdAt = userProfile?.createdAt;
 
-
-
   // Helper function to convert Firestore timestamp to Date
-  const convertToDate = (timestamp: any): Date | null => {
+  const convertToDate = (timestamp: unknown): Date | null => {
     if (!timestamp) return null;
     
     // If it's already a Date object
@@ -85,7 +72,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
     }
     
     // If it's a Firestore Timestamp
-    if (timestamp && typeof timestamp.toDate === 'function') {
+    if (timestamp && typeof timestamp === 'object' && 'toDate' in timestamp && typeof timestamp.toDate === 'function') {
       return timestamp.toDate();
     }
     
@@ -102,7 +89,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
     
     // If it's an object with seconds/nanoseconds (Firestore Timestamp structure)
     if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
-      return new Date(timestamp.seconds * 1000 + (timestamp.nanoseconds || 0) / 1000000);
+      return new Date((timestamp as { seconds: number; nanoseconds?: number }).seconds * 1000 + ((timestamp as { seconds: number; nanoseconds?: number }).nanoseconds || 0) / 1000000);
     }
     
     return null;
@@ -187,14 +174,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
 
             {/* Menu Items */}
             <div className="py-1">
-              <button
-                onClick={handleManualSync}
-                disabled={syncStatus.syncInProgress}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Cloud size={16} />
-                {syncStatus.syncInProgress ? 'Syncing...' : 'Sync Data'}
-              </button>
               
               <button
                 onClick={() => {
