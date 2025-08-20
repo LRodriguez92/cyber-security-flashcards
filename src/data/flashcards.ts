@@ -865,8 +865,6 @@ export const flashcards: Flashcard[] = [
     objective: "4.6",
     color: "yellow"
   },
-
-  // Blue - Domain 1.4 (Cryptographic Solutions) & 1.3 (Change Mgmt)
   {
     id: "97",
     question: "Symmetric vs. Asymmetric encryption—key difference?",
@@ -975,8 +973,6 @@ export const flashcards: Flashcard[] = [
     objective: "1.3",
     color: "blue"
   },
-
-  // White - Domain 5.1 / 5.2 / 5.3 / 5.4 / 5.5
   {
     id: "109",
     question: "Centralized vs. Decentralized governance—pros/cons?",
@@ -1247,8 +1243,6 @@ export const flashcards: Flashcard[] = [
     objective: "5.5",
     color: "white"
   },
-
-  // Red - Domain 2.2/2.3/2.4/2.5 (additional from Section 18)
   {
     id: "139",
     question: "Common hardware vulnerabilities to watch for?",
@@ -1355,6 +1349,177 @@ export const flashcards: Flashcard[] = [
     domain: "Threats, Vulnerabilities & Mitigations",
     domainNumber: "2.0",
     objective: "2.2",
+    color: "red"
+  },
+  {
+    id: "151",
+    question: "What is a Denial of Service (DoS) attack?",
+    answer: "Any attack that attempts to make resources unavailable by flooding or crashing a system. Examples include flood attacks, PDoS, and fork bombs.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "152",
+    question: "How does a SYN Flood work?",
+    answer: "It initiates multiple TCP handshakes but never completes them, exhausting server resources with half-open connections.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "153",
+    question: "What is a Permanent Denial of Service (PDoS)?",
+    answer: "An attack that exploits firmware flaws to corrupt or erase device firmware, permanently disabling it until reloaded.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "154",
+    question: "What is a Distributed Denial of Service (DDoS)?",
+    answer: "A large-scale attack using many compromised systems (botnet) to overwhelm a single target. Example: DNS amplification.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "155",
+    question: "Name three defenses against DDoS attacks.",
+    answer: "Blackholing/sinkholing, intrusion prevention systems (IPS), elastic cloud infrastructure, specialized providers (CloudFlare, Akamai).",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "156",
+    question: "What is DNS Cache Poisoning?",
+    answer: "Also known as DNS spoofing, it corrupts DNS cache to redirect users to malicious sites. Mitigated with DNSSEC and secure configurations.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "157",
+    question: "What is DNS Tunneling?",
+    answer: "Encapsulating other traffic (HTTP/SSH) in DNS requests over port 53 to bypass firewalls for C2 or exfiltration. Mitigated with DNS log monitoring.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "158",
+    question: "What is Domain Hijacking?",
+    answer: "Unauthorized changes to a domain's registration, redirecting traffic. Prevented with registry locks and secure registration info.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "159",
+    question: "What is Arbitrary Code Execution?",
+    answer: "When an attacker can run any code of their choosing on a target system, often via vulnerabilities.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "160",
+    question: "Differentiate Vertical vs Horizontal Privilege Escalation.",
+    answer: "Vertical: moving from user to admin/root. Horizontal: accessing another user's resources at same privilege level.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "161",
+    question: "What is a Rootkit?",
+    answer: "Stealthy malware that modifies system files to hide itself and maintain persistence. Kernel-mode rootkits are most dangerous.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "162",
+    question: "What is a Replay Attack?",
+    answer: "Intercepting valid transmissions and retransmitting them later to gain unauthorized access. Mitigated by session tokens, MFA, WPA3.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "163",
+    question: "What is Session Hijacking?",
+    answer: "Taking over a valid user session by stealing/predicting session tokens or cookies. Prevented by encrypting and validating cookies.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "164",
+    question: "What is an On-Path Attack?",
+    answer: "Attacker places themselves between two communicating hosts, capturing or modifying data. Examples: ARP poisoning, rogue APs, SSL stripping.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "165",
+    question: "What is a Downgrade Attack?",
+    answer: "Forcing a system to use weaker encryption (e.g., SSL 2.0 instead of TLS 1.3) to allow easier interception.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "166",
+    question: "What is an LDAP Injection?",
+    answer: "Manipulating LDAP queries via user input to reveal or modify directory data. Prevented with input validation/sanitization.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "167",
+    question: "What is a Command Injection?",
+    answer: "Executing arbitrary shell commands via a vulnerable app input. Example: appending '&& hostname' to a ping input field.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "168",
+    question: "What is a Process Injection?",
+    answer: "Injecting code into another running process to gain its privileges or evade detection. Mitigated with endpoint security & least privilege.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
+    color: "red"
+  },
+  {
+    id: "169",
+    question: "List 3 Indicators of Compromise (IoCs).",
+    answer: "Examples: Account lockouts, impossible travel, missing logs, concurrent sessions, unusual resource consumption.",
+    domain: "Threats, Vulnerabilities & Mitigations",
+    domainNumber: "2.0",
+    objective: "2.4",
     color: "red"
   }
 ];
