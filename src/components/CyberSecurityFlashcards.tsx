@@ -26,8 +26,6 @@ import ResetOptionsModal from './ResetOptionsModal';
 const CyberSecurityFlashcards: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showResetOptions, setShowResetOptions] = useState(false);
-  const [pendingDomains, setPendingDomains] = useState<string[]>([]);
-  const [pendingConfidenceCategories, setPendingConfidenceCategories] = useState<string[]>([]);
   
   const {
     // State
@@ -118,76 +116,52 @@ const CyberSecurityFlashcards: React.FC = () => {
     }
   };
 
-  // Initialize pending state when filters are opened
-  const handleOpenFilters = () => {
-    if (currentMode === 'study') {
-      setPendingDomains(selectedDomains);
-    } else {
-      setPendingConfidenceCategories(selectedConfidenceCategories);
-    }
-    setShowFilters(true);
-  };
-
-  // Handle pending domain changes
-  const handlePendingDomainChange = (domainId: string) => {
+  // Handle pending domain changes - now apply immediately
+  const handlePendingDomainChange = async (domainId: string) => {
+    let newDomains: string[];
+    
     if (domainId === 'all') {
-      setPendingDomains(['all']);
+      newDomains = ['all'];
     } else {
-      setPendingDomains(prev => {
-        const withoutAll = prev.filter(id => id !== 'all');
-        
-        if (withoutAll.includes(domainId)) {
-          const newSelection = withoutAll.filter(id => id !== domainId);
-          return newSelection.length === 0 ? ['all'] : newSelection;
-        } else {
-          return [...withoutAll, domainId];
-        }
-      });
-    }
-  };
-
-  // Handle pending confidence category changes
-  const handlePendingConfidenceCategoryChange = (categoryId: string) => {
-    setPendingConfidenceCategories(prev => {
-      if (prev.includes(categoryId)) {
-        return prev.filter(id => id !== categoryId);
+      const currentDomains = selectedDomains;
+      const withoutAll = currentDomains.filter(id => id !== 'all');
+      
+      if (withoutAll.includes(domainId)) {
+        const newSelection = withoutAll.filter(id => id !== domainId);
+        newDomains = newSelection.length === 0 ? ['all'] : newSelection;
       } else {
-        return [...prev, categoryId];
+        newDomains = [...withoutAll, domainId];
       }
-    });
-  };
-
-  // Confirm and apply changes
-  const handleConfirmChanges = async () => {
-    if (currentMode === 'study') {
-      // Apply domain changes only (study filter is now applied immediately)
-      await setSelectedDomains(pendingDomains);
-      setCurrentCard(0);
-      setIsFlipped(false);
-      setAnswered(false);
-      setIsShuffled(false);
-      setShuffledIndices([]);
-      setShowFilters(false);
-    } else {
-      // In review mode, check if at least one category is selected
-      if (pendingConfidenceCategories.length === 0) {
-        // Don't close modal if no categories selected
-        return;
-      }
-      // Apply confidence category changes
-      await setSelectedConfidenceCategories(pendingConfidenceCategories);
-      setCurrentCard(0);
-      setIsFlipped(false);
-      setAnswered(false);
-      setIsShuffled(false);
-      setShuffledIndices([]);
-      setShowFilters(false);
     }
+    
+    // Apply changes immediately
+    await setSelectedDomains(newDomains);
+    setCurrentCard(0);
+    setIsFlipped(false);
+    setAnswered(false);
+    setIsShuffled(false);
+    setShuffledIndices([]);
   };
 
-  // Cancel changes
-  const handleCancelChanges = () => {
-    setShowFilters(false);
+  // Handle pending confidence category changes - now apply immediately
+  const handlePendingConfidenceCategoryChange = async (categoryId: string) => {
+    const currentCategories = selectedConfidenceCategories;
+    const newCategories = currentCategories.includes(categoryId)
+      ? currentCategories.filter((id: string) => id !== categoryId)
+      : [...currentCategories, categoryId];
+    
+    // Apply changes immediately
+    await setSelectedConfidenceCategories(newCategories);
+    setCurrentCard(0);
+    setIsFlipped(false);
+    setAnswered(false);
+    setIsShuffled(false);
+    setShuffledIndices([]);
+  };
+
+  // Initialize pending state when filters are opened - now use current state directly
+  const handleOpenFilters = () => {
+    setShowFilters(true);
   };
 
   // Handle reset button click - show options modal
@@ -258,15 +232,27 @@ const CyberSecurityFlashcards: React.FC = () => {
             <>
               <DomainFilter
                 domains={domains}
-                selectedDomains={pendingDomains}
+                selectedDomains={selectedDomains}
                 onDomainChange={handlePendingDomainChange}
               />
-              <div className="mt-6 pt-6 border-t border-slate-600">
+              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-600">
                 <StudyFilter
                   studyFilter={studyFilter}
                   onStudyFilterChange={setStudyFilter}
                   confidenceTracking={confidenceTracking}
                 />
+              </div>
+              
+              {/* Reset Button for Study Mode */}
+              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-600">
+                <button
+                  onClick={handleResetClick}
+                  className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-slate-900 flex items-center justify-center gap-2"
+                  aria-label="Reset confidence tracking"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>Reset Confidence Tracking</span>
+                </button>
               </div>
             </>
           )}
@@ -274,13 +260,13 @@ const CyberSecurityFlashcards: React.FC = () => {
             <>
               <ConfidenceFilter
                 confidenceCategories={confidenceCategories}
-                selectedConfidenceCategories={pendingConfidenceCategories}
+                selectedConfidenceCategories={selectedConfidenceCategories}
                 confidenceTracking={confidenceTracking}
                 onConfidenceCategoryChange={handlePendingConfidenceCategoryChange}
               />
               
               {/* Reset Button for Review Mode */}
-              <div className="mt-6 pt-6 border-t border-slate-600">
+              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-600">
                 <button
                   onClick={handleResetClick}
                   className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-slate-900 flex items-center justify-center gap-2"
@@ -293,26 +279,6 @@ const CyberSecurityFlashcards: React.FC = () => {
             </>
           )}
           
-          {/* Confirm/Cancel Buttons */}
-          <div className="flex gap-3 mt-6 justify-center">
-            <button
-              onClick={handleCancelChanges}
-              className="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirmChanges}
-              disabled={currentMode === 'review' && pendingConfidenceCategories.length === 0}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${
-                currentMode === 'review' && pendingConfidenceCategories.length === 0
-                  ? 'bg-slate-500 text-slate-300 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white focus:ring-blue-400'
-              }`}
-            >
-              Confirm
-            </button>
-          </div>
         </Modal>
 
 

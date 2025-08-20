@@ -10,7 +10,7 @@ interface DomainFilterProps {
 
 const DomainFilter: React.FC<DomainFilterProps> = ({ domains, selectedDomains, onDomainChange }) => {
   return (
-    <div className="mb-8">
+    <div className="mb-4 sm:mb-8">
       <div className="grid grid-cols-2 gap-2 justify-items-center sm:flex sm:flex-wrap sm:justify-center">
         {domains.map(domain => (
           <button

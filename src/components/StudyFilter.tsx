@@ -23,12 +23,12 @@ const StudyFilter: React.FC<StudyFilterProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-sm text-slate-300 mb-3">
+    <div className="space-y-3 sm:space-y-4">
+      <div className="text-sm text-slate-300 mb-2 sm:mb-3">
         Choose which cards to study:
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         <label className="flex items-center space-x-3 cursor-pointer group">
           <input
             type="radio"
