@@ -23,6 +23,7 @@ import EmptyState from './EmptyState';
 import ProgressSummary from './ProgressSummary';
 import ProgressBar from './ProgressBar';
 import ResetOptionsModal from './ResetOptionsModal';
+import OfflineIndicator from './OfflineIndicator';
 
 const CyberSecurityFlashcards: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
@@ -64,18 +65,8 @@ const CyberSecurityFlashcards: React.FC = () => {
     setShuffledIndices,
   } = useFlashcardState();
 
-  // Initialize cloud sync and handle auth state
+  // Handle auth state changes (cloud sync is initialized in usePersistence hook)
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        await cloudSyncService.initialize();
-      } catch (error) {
-        console.error('Failed to initialize cloud sync:', error);
-      }
-    };
-
-    initializeApp();
-
     const unsubscribe = cloudSyncService.onAuthStateChanged((state) => {
       console.log('Auth state changed:', state);
     });
@@ -108,8 +99,8 @@ const CyberSecurityFlashcards: React.FC = () => {
 
 
   // Handle confidence marking with current card data
-  const handleMarkConfidence = (confidenceLevel: string) => {
-    markConfidence(confidenceLevel, currentCardData);
+  const handleMarkConfidence = async (confidenceLevel: string) => {
+    await markConfidence(confidenceLevel, currentCardData);
     
     // Automatically advance to the next card after a short delay, but only if not at the last card
     setTimeout(() => {
@@ -178,11 +169,11 @@ const CyberSecurityFlashcards: React.FC = () => {
   };
 
   // Confirm and apply changes
-  const handleConfirmChanges = () => {
+  const handleConfirmChanges = async () => {
     if (currentMode === 'study') {
       // Apply domain changes and study filter
-      setSelectedDomains(pendingDomains);
-      setStudyFilter(pendingStudyFilter);
+      await setSelectedDomains(pendingDomains);
+      await setStudyFilter(pendingStudyFilter);
       setCurrentCard(0);
       setIsFlipped(false);
       setAnswered(false);
@@ -196,7 +187,7 @@ const CyberSecurityFlashcards: React.FC = () => {
         return;
       }
       // Apply confidence category changes
-      setSelectedConfidenceCategories(pendingConfidenceCategories);
+      await setSelectedConfidenceCategories(pendingConfidenceCategories);
       setCurrentCard(0);
       setIsFlipped(false);
       setAnswered(false);
@@ -217,13 +208,13 @@ const CyberSecurityFlashcards: React.FC = () => {
   };
 
   // Handle reset with selected confidence categories
-  const handleResetConfidenceCategories = (categoriesToReset: string[]) => {
-    resetConfidenceCategories(categoriesToReset);
+  const handleResetConfidenceCategories = async (categoriesToReset: string[]) => {
+    await resetConfidenceCategories(categoriesToReset);
   };
 
   return (
     <div className="min-h-screen min-h-dvh bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-2 sm:p-2 lg:p-3 mobile-safe-padding">
-
+      <OfflineIndicator />
       
       <div className="max-w-4xl mx-auto pt-8 sm:pt-12 lg:pt-16 pb-4 sm:pb-6">
         <Header onAuthStateChange={(isAuthenticated) => {

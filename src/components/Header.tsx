@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { User, LogIn } from 'lucide-react';
+import { User, LogIn, Cloud, CloudOff, CloudCheck } from 'lucide-react';
 import { UserProfile, AuthModal } from './index';
 import { cloudSyncService, type AuthState } from '../services/cloudSync';
+import { usePersistence } from '../hooks/usePersistence';
 
 interface HeaderProps {
   onAuthStateChange?: (isAuthenticated: boolean) => void;
@@ -14,6 +15,7 @@ const Header: React.FC<HeaderProps> = ({ onAuthStateChange }) => {
     loading: true,
     error: null
   });
+  const { syncStatus } = usePersistence();
 
   useEffect(() => {
     const unsubscribe = cloudSyncService.onAuthStateChanged((state) => {
@@ -32,6 +34,18 @@ const Header: React.FC<HeaderProps> = ({ onAuthStateChange }) => {
     // Auth state will be updated automatically via the listener
   };
 
+  const getSyncIcon = () => {
+    if (syncStatus.syncInProgress) {
+      return <Cloud className="w-4 h-4 animate-pulse text-blue-400" />;
+    } else if (syncStatus.error) {
+      return <CloudOff className="w-4 h-4 text-red-400" />;
+    } else if (syncStatus.lastSync) {
+      return <CloudCheck className="w-4 h-4 text-green-400" />;
+    } else {
+      return <Cloud className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
   return (
     <div className="relative">
       <div className="text-center mb-2 sm:mb-3 pt-1">
@@ -44,7 +58,19 @@ const Header: React.FC<HeaderProps> = ({ onAuthStateChange }) => {
       </div>
 
       {/* Auth Section */}
-      <div className="absolute top-0 right-0">
+      <div className="absolute top-0 right-0 flex items-center gap-2">
+        {/* Sync Status Indicator */}
+        {authState.user && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-white/5 rounded-lg">
+            {getSyncIcon()}
+            <span className="text-xs text-gray-300">
+              {syncStatus.syncInProgress ? 'Syncing' : 
+               syncStatus.error ? 'Error' : 
+               syncStatus.lastSync ? 'Synced' : 'Offline'}
+            </span>
+          </div>
+        )}
+        
         {authState.loading ? (
           <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
         ) : authState.user ? (

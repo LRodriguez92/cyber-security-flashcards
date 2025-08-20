@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Flashcard, ConfidenceTracking, StudyMode } from '../types/flashcard';
 import { usePersistence } from './usePersistence';
-import { cloudSyncService } from '../services/cloudSync';
+// Cloud sync is now handled in usePersistence hook to prevent multiple initializations
 
 export const useFlashcardState = () => {
   const {
@@ -21,9 +21,10 @@ export const useFlashcardState = () => {
   const [isShuffled, setIsShuffled] = useState(false);
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
 
-  // Initialize cloud sync
+  // Initialize cloud sync (only once)
   useEffect(() => {
-    cloudSyncService.initialize().catch(console.error);
+    // Cloud sync is now initialized in usePersistence hook
+    // No need to initialize here to prevent multiple connections
   }, []);
 
   // Update last active on user interaction
@@ -32,7 +33,7 @@ export const useFlashcardState = () => {
   }, [updateLastActive]);
 
   // Enhanced markConfidence with persistence
-  const markConfidence = useCallback((confidenceLevel: string, currentCardData: Flashcard | undefined) => {
+  const markConfidence = useCallback(async (confidenceLevel: string, currentCardData: Flashcard | undefined) => {
     if (!answered && currentCardData) {
       const cardId = `${currentCardData.domain}-${currentCard}`;
       
@@ -62,8 +63,8 @@ export const useFlashcardState = () => {
         newCompletedCards.push(cardId);
       }
 
-      // Save progress
-      saveProgress({
+      // Save progress and sync to cloud
+      await saveProgress({
         confidenceTracking: newConfidenceTracking,
         score: newScore,
         completedCards: newCompletedCards,
@@ -80,7 +81,7 @@ export const useFlashcardState = () => {
   }, [answered, currentCard, userProgress, saveProgress]);
 
   // Enhanced reset functions
-  const resetState = useCallback(() => {
+  const resetState = useCallback(async () => {
     setCurrentCard(0);
     setIsFlipped(false);
     setAnswered(false);
@@ -89,15 +90,15 @@ export const useFlashcardState = () => {
 
     // End current session if exists
     if (sessionData.currentSessionId) {
-      endStudySession(sessionData.currentSessionId, {
+      await endStudySession(sessionData.currentSessionId, {
         cardsStudied: sessionData.cardsInSession,
         correctAnswers: userProgress.score.correct,
         incorrectAnswers: userProgress.score.incorrect,
       });
     }
 
-    // Reset progress
-    saveProgress({
+    // Reset progress and sync to cloud
+    await saveProgress({
       confidenceTracking: {
         'knew-it': [],
         'quick-think': [],
@@ -110,10 +111,10 @@ export const useFlashcardState = () => {
   }, [saveProgress, endStudySession, sessionData, userProgress.score]);
 
   // Enhanced mode switching with session management
-  const switchMode = useCallback((mode: StudyMode) => {
+  const switchMode = useCallback(async (mode: StudyMode) => {
     // End current session
     if (sessionData.currentSessionId) {
-      endStudySession(sessionData.currentSessionId, {
+      await endStudySession(sessionData.currentSessionId, {
         cardsStudied: sessionData.cardsInSession,
         correctAnswers: userProgress.score.correct,
         incorrectAnswers: userProgress.score.incorrect,
@@ -131,7 +132,7 @@ export const useFlashcardState = () => {
     setShuffledIndices([]);
 
     // Update mode
-    saveProgress({ currentMode: mode });
+    await saveProgress({ currentMode: mode });
   }, [saveProgress, endStudySession, startStudySession, sessionData, userProgress]);
 
   const nextCard = useCallback(() => {
@@ -170,9 +171,9 @@ export const useFlashcardState = () => {
     setAnswered(false);
   }, [isShuffled]);
 
-  const handleDomainChange = useCallback((domainId: string) => {
+  const handleDomainChange = useCallback(async (domainId: string) => {
     if (domainId === 'all') {
-      saveProgress({ selectedDomains: ['all'] });
+      await saveProgress({ selectedDomains: ['all'] });
     } else {
       const currentDomains = userProgress.selectedDomains;
       const withoutAll = currentDomains.filter((id: string) => id !== 'all');
@@ -180,10 +181,10 @@ export const useFlashcardState = () => {
       if (withoutAll.includes(domainId)) {
         const newSelection = withoutAll.filter((id: string) => id !== domainId);
         const finalSelection = newSelection.length === 0 ? ['all'] : newSelection;
-        saveProgress({ selectedDomains: finalSelection });
+        await saveProgress({ selectedDomains: finalSelection });
       } else {
         const finalSelection = [...withoutAll, domainId];
-        saveProgress({ selectedDomains: finalSelection });
+        await saveProgress({ selectedDomains: finalSelection });
       }
     }
     setCurrentCard(0);
@@ -193,13 +194,13 @@ export const useFlashcardState = () => {
     setShuffledIndices([]);
   }, [userProgress.selectedDomains, saveProgress]);
 
-  const handleConfidenceCategoryChange = useCallback((categoryId: string) => {
+  const handleConfidenceCategoryChange = useCallback(async (categoryId: string) => {
     const currentCategories = userProgress.selectedConfidenceCategories;
     const newCategories = currentCategories.includes(categoryId)
       ? currentCategories.filter((id: string) => id !== categoryId)
       : [...currentCategories, categoryId];
     
-    saveProgress({ selectedConfidenceCategories: newCategories });
+    await saveProgress({ selectedConfidenceCategories: newCategories });
     setCurrentCard(0);
     setIsFlipped(false);
     setAnswered(false);
@@ -251,15 +252,15 @@ export const useFlashcardState = () => {
     setShuffledIndices,
     
     // Additional setters for components
-    setSelectedDomains: (domains: string[]) => saveProgress({ selectedDomains: domains }),
-    setSelectedConfidenceCategories: (categories: string[]) => saveProgress({ selectedConfidenceCategories: categories }),
-    setStudyFilter: (filter: 'all' | 'unanswered') => saveProgress({ studyFilter: filter }),
-    resetConfidenceCategories: (categoriesToReset: string[]) => {
+    setSelectedDomains: async (domains: string[]) => await saveProgress({ selectedDomains: domains }),
+    setSelectedConfidenceCategories: async (categories: string[]) => await saveProgress({ selectedConfidenceCategories: categories }),
+    setStudyFilter: async (filter: 'all' | 'unanswered') => await saveProgress({ studyFilter: filter }),
+    resetConfidenceCategories: async (categoriesToReset: string[]) => {
       const newTracking = { ...userProgress.confidenceTracking };
       categoriesToReset.forEach(category => {
         newTracking[category as keyof ConfidenceTracking] = [];
       });
-      saveProgress({ confidenceTracking: newTracking });
+      await saveProgress({ confidenceTracking: newTracking });
     }
   };
 }; 

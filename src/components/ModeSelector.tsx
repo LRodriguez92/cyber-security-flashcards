@@ -4,16 +4,20 @@ import type { StudyMode } from '../types/flashcard';
 
 interface ModeSelectorProps {
   currentMode: StudyMode;
-  onModeChange: (mode: StudyMode) => void;
+  onModeChange: (mode: StudyMode) => Promise<void>;
 }
 
 const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onModeChange }) => {
+  const handleModeChange = async (mode: StudyMode) => {
+    await onModeChange(mode);
+  };
+
   return (
     <div className="mb-3 sm:mb-4">
       {/* Mobile: Stacked layout, Desktop: Side-by-side */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center">
         <button
-          onClick={() => onModeChange('study')}
+          onClick={() => handleModeChange('study')}
           className={`flex items-center justify-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all text-sm sm:text-base ${
             currentMode === 'study'
               ? 'bg-blue-600 text-white shadow-lg scale-[1.02] ring-2 ring-blue-400'
@@ -25,7 +29,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onModeChange }
           <span className="sm:hidden">Study</span>
         </button>
         <button
-          onClick={() => onModeChange('review')}
+          onClick={() => handleModeChange('review')}
           className={`flex items-center justify-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all text-sm sm:text-base ${
             currentMode === 'review'
               ? 'bg-purple-600 text-white shadow-lg scale-[1.02] ring-2 ring-purple-400'

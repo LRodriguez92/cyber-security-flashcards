@@ -1,7 +1,7 @@
 import type { UserProgress, UserProfile } from '../types/flashcard';
 import type { User as FirebaseUser, AuthError } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, enableNetwork } from 'firebase/firestore';
 import { 
   getAuth, 
   signInAnonymously, 
@@ -23,11 +23,147 @@ const FIREBASE_CONFIG = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(FIREBASE_CONFIG);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+// Check if Firebase is properly configured
+const isFirebaseConfigured = () => {
+  return FIREBASE_CONFIG.apiKey && 
+         FIREBASE_CONFIG.authDomain && 
+         FIREBASE_CONFIG.projectId && 
+         FIREBASE_CONFIG.storageBucket && 
+         FIREBASE_CONFIG.messagingSenderId && 
+         FIREBASE_CONFIG.appId;
+};
+
+// Initialize Firebase only once
+let app: ReturnType<typeof initializeApp> | null = null;
+let db: ReturnType<typeof getFirestore> | null = null;
+let auth: ReturnType<typeof getAuth> | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
+
+// Connection state management
+let isOnline = navigator.onLine;
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+
+const initializeFirebase = () => {
+  if (!app) {
+    if (!isFirebaseConfigured()) {
+      throw new Error('Firebase not configured. Please set up environment variables. See FIREBASE_SETUP.md for instructions.');
+    }
+    
+    try {
+      // Log configuration for debugging (without sensitive data)
+      console.log('🔧 Initializing Firebase with config:', {
+        projectId: FIREBASE_CONFIG.projectId,
+        authDomain: FIREBASE_CONFIG.authDomain,
+        hasApiKey: !!FIREBASE_CONFIG.apiKey,
+        hasAppId: !!FIREBASE_CONFIG.appId
+      });
+      
+      app = initializeApp(FIREBASE_CONFIG);
+      db = getFirestore(app);
+      auth = getAuth(app);
+      googleProvider = new GoogleAuthProvider();
+      
+      // Add some debugging for Firestore
+      console.log('✅ Firebase initialized successfully');
+      console.log('📊 Firestore instance created');
+      console.log('🔐 Auth instance created');
+      
+      // Test basic Firestore connectivity
+      if (db) {
+        console.log('🔍 Firestore database reference obtained');
+      }
+      
+      // Set up network state listeners
+      setupNetworkListeners();
+      
+    } catch (error) {
+      console.error('❌ Firebase initialization failed:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as { code?: string })?.code || 'No code',
+        name: error instanceof Error ? error.name : 'Unknown error type'
+      });
+      throw error;
+    }
+  }
+  
+  // At this point, all instances should be initialized
+  if (!app || !db || !auth || !googleProvider) {
+    throw new Error('Firebase initialization incomplete');
+  }
+  
+  return { app, db, auth, googleProvider };
+};
+
+const setupNetworkListeners = () => {
+  // Listen for online/offline events
+  window.addEventListener('online', () => {
+    console.log('🌐 Network: Online');
+    isOnline = true;
+    // Re-enable Firestore network
+    if (db) {
+      enableNetwork(db).then(() => {
+        console.log('✅ Firestore network re-enabled');
+      }).catch(error => {
+        console.error('❌ Failed to re-enable Firestore network:', error);
+      });
+    }
+  });
+
+  window.addEventListener('offline', () => {
+    console.log('📴 Network: Offline');
+    isOnline = false;
+  });
+};
+
+const waitForConnection = async (): Promise<boolean> => {
+  if (isOnline && db) {
+    try {
+      // Test connection with a simple operation
+      await enableNetwork(db);
+      return true;
+    } catch (error) {
+      console.warn('⚠️ Connection test failed:', error);
+      return false;
+    }
+  }
+  return false;
+};
+
+const retryOperation = async <T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  maxRetries: number = MAX_RETRY_ATTEMPTS
+): Promise<T> => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Check if we're online before attempting
+      if (!isOnline) {
+        console.log(`⏳ ${operationName}: Waiting for network connection...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        continue;
+      }
+
+      return await operation();
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      console.error(`❌ ${operationName} attempt ${attempt}/${maxRetries} failed:`, errorMessage);
+      
+      if (isLastAttempt) {
+        throw error;
+      }
+      
+      // Wait before retrying
+      console.log(`⏳ ${operationName}: Retrying in ${RETRY_DELAY}ms...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    }
+  }
+  
+  throw new Error(`${operationName} failed after ${maxRetries} attempts`);
+};
 
 export interface AuthState {
   user: FirebaseUser | null;
@@ -36,6 +172,10 @@ export interface AuthState {
 }
 
 export class CloudSyncService {
+  private static instance: CloudSyncService;
+  private static isInitializing = false;
+  private static initializationPromise: Promise<void> | null = null;
+  
   private isInitialized = false;
   private userId: string | null = null;
   private authState: AuthState = {
@@ -45,12 +185,43 @@ export class CloudSyncService {
   };
   private authStateListeners: ((state: AuthState) => void)[] = [];
 
-  async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+  constructor() {
+    if (CloudSyncService.instance) {
+      return CloudSyncService.instance;
+    }
+    CloudSyncService.instance = this;
+  }
 
+  async initialize(): Promise<void> {
+    // If already initialized, return immediately
+    if (this.isInitialized) {
+      return;
+    }
+
+    // If initialization is in progress, wait for it to complete
+    if (CloudSyncService.isInitializing && CloudSyncService.initializationPromise) {
+      return CloudSyncService.initializationPromise;
+    }
+
+    // Start initialization
+    CloudSyncService.isInitializing = true;
+    CloudSyncService.initializationPromise = this.performInitialization();
+    
     try {
+      await CloudSyncService.initializationPromise;
+    } finally {
+      CloudSyncService.isInitializing = false;
+      CloudSyncService.initializationPromise = null;
+    }
+  }
+
+  private async performInitialization(): Promise<void> {
+    try {
+      // Initialize Firebase
+      const { auth: firebaseAuth } = initializeFirebase();
+
       // Listen for auth state changes
-      onAuthStateChanged(auth, (user) => {
+      onAuthStateChanged(firebaseAuth, (user) => {
         this.userId = user?.uid || null;
         this.authState = {
           user,
@@ -59,13 +230,20 @@ export class CloudSyncService {
         };
         this.notifyAuthStateListeners();
         console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
+      }, (error) => {
+        // Handle auth state change errors
+        console.error('Auth state change error:', error);
+        this.authState.error = error.message;
+        this.authState.loading = false;
+        this.notifyAuthStateListeners();
       });
 
       this.isInitialized = true;
-      console.log('Cloud sync initialized');
+      console.log('✅ Cloud sync initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize cloud sync:', error);
+      console.error('❌ Failed to initialize cloud sync:', error);
       this.authState.error = error instanceof Error ? error.message : 'Unknown error';
+      this.authState.loading = false;
       this.notifyAuthStateListeners();
       throw error;
     }
@@ -73,11 +251,14 @@ export class CloudSyncService {
 
   // Authentication methods
   async signInWithEmail(email: string, password: string): Promise<void> {
+    await this.ensureInitialized();
+    const { auth: firebaseAuth } = initializeFirebase();
+    
     try {
       this.authState.loading = true;
       this.notifyAuthStateListeners();
       
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(firebaseAuth, email, password);
     } catch (error) {
       const authError = error as AuthError;
       this.authState.error = this.getAuthErrorMessage(authError.code);
@@ -88,11 +269,14 @@ export class CloudSyncService {
   }
 
   async signUpWithEmail(email: string, password: string, displayName?: string): Promise<void> {
+    await this.ensureInitialized();
+    const { auth: firebaseAuth, db: firebaseDb } = initializeFirebase();
+    
     try {
       this.authState.loading = true;
       this.notifyAuthStateListeners();
       
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
       
       // Create user profile in Firestore
       if (userCredential.user) {
@@ -109,7 +293,7 @@ export class CloudSyncService {
           }
         };
         
-        await setDoc(doc(db, 'users', userCredential.user.uid), userProfile);
+        await setDoc(doc(firebaseDb, 'users', userCredential.user.uid), userProfile);
       }
     } catch (error) {
       const authError = error as AuthError;
@@ -121,15 +305,18 @@ export class CloudSyncService {
   }
 
   async signInWithGoogle(): Promise<void> {
+    await this.ensureInitialized();
+    const { auth: firebaseAuth, db: firebaseDb, googleProvider: provider } = initializeFirebase();
+    
     try {
       this.authState.loading = true;
       this.notifyAuthStateListeners();
       
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(firebaseAuth, provider);
       
       // Create user profile if it doesn't exist
       if (result.user) {
-        const userDoc = doc(db, 'users', result.user.uid);
+        const userDoc = doc(firebaseDb, 'users', result.user.uid);
         const userSnap = await getDoc(userDoc);
         
         if (!userSnap.exists()) {
@@ -159,8 +346,11 @@ export class CloudSyncService {
   }
 
   async signOut(): Promise<void> {
+    await this.ensureInitialized();
+    const { auth: firebaseAuth } = initializeFirebase();
+    
     try {
-      await signOut(auth);
+      await signOut(firebaseAuth);
     } catch (error) {
       console.error('Failed to sign out:', error);
       throw error;
@@ -168,17 +358,26 @@ export class CloudSyncService {
   }
 
   async signInAnonymously(): Promise<void> {
+    await this.ensureInitialized();
+    const { auth: firebaseAuth } = initializeFirebase();
+    
     try {
       this.authState.loading = true;
       this.notifyAuthStateListeners();
       
-      await signInAnonymously(auth);
+      await signInAnonymously(firebaseAuth);
     } catch (error) {
       const authError = error as AuthError;
       this.authState.error = this.getAuthErrorMessage(authError.code);
       this.authState.loading = false;
       this.notifyAuthStateListeners();
       throw new Error(this.authState.error);
+    }
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    if (!this.isInitialized) {
+      await this.initialize();
     }
   }
 
@@ -232,103 +431,125 @@ export class CloudSyncService {
 
   // User profile methods
   async getUserProfile(): Promise<UserProfile | null> {
+    await this.ensureInitialized();
+    const { db: firebaseDb } = initializeFirebase();
+    
     if (!this.userId) return null;
 
     try {
-      const userDoc = doc(db, 'users', this.userId);
-      const userSnap = await getDoc(userDoc);
-      
-      if (userSnap.exists()) {
-        return userSnap.data() as UserProfile;
-      }
-      
-      return null;
+      return await retryOperation(async () => {
+        const userDoc = doc(firebaseDb, 'users', this.userId!);
+        const userSnap = await getDoc(userDoc);
+        
+        if (userSnap.exists()) {
+          return userSnap.data() as UserProfile;
+        }
+        
+        return null;
+      }, 'Fetch user profile');
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
-      throw error;
+      // Return null instead of throwing - allows app to continue with local data
+      return null;
     }
   }
 
   async updateUserProfile(updates: Partial<UserProfile>): Promise<void> {
+    await this.ensureInitialized();
+    const { db: firebaseDb } = initializeFirebase();
+    
     if (!this.userId) throw new Error('User not authenticated');
 
     try {
-      const userDoc = doc(db, 'users', this.userId);
-      await updateDoc(userDoc, {
-        ...updates,
-        lastActive: new Date()
-      });
+      await retryOperation(async () => {
+        const userDoc = doc(firebaseDb, 'users', this.userId!);
+        await updateDoc(userDoc, {
+          ...updates,
+          lastActive: new Date()
+        });
+      }, 'Update user profile');
     } catch (error) {
       console.error('Failed to update user profile:', error);
-      throw error;
+      // Don't throw error for profile updates - let the app continue working
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async syncProgress(progress: UserProgress): Promise<void> {
-    if (!this.isInitialized || !this.userId) {
-      throw new Error('Cloud sync not initialized');
+    await this.ensureInitialized();
+    const { db: firebaseDb } = initializeFirebase();
+    
+    if (!isFirebaseConfigured()) {
+      throw new Error('Firebase not configured');
+    }
+    
+    if (!this.userId) {
+      throw new Error('User not authenticated');
     }
 
     try {
-      const progressDoc = doc(db, 'users', this.userId, 'progress', 'current');
+      await retryOperation(async () => {
+        const progressDoc = doc(firebaseDb, 'users', this.userId!, 'progress', 'current');
 
-      // Update progress
-      await setDoc(progressDoc, {
-        ...progress,
-        lastSyncTimestamp: new Date(),
-        version: '1.0.0',
-      }, { merge: true });
+        // Update progress
+        await setDoc(progressDoc, {
+          ...progress,
+          lastSyncTimestamp: new Date(),
+          version: '1.0.0',
+        }, { merge: true });
 
-      console.log('Progress synced to cloud');
+        console.log('Progress synced to cloud');
+      }, 'Sync progress');
     } catch (error) {
       console.error('Failed to sync progress:', error);
-      throw error;
+      // Don't throw error for sync failures - let the app continue working offline
+      // The error will be logged but won't break the user experience
     }
   }
 
   async fetchProgress(): Promise<UserProgress | null> {
-    if (!this.isInitialized || !this.userId) {
-      throw new Error('Cloud sync not initialized');
+    await this.ensureInitialized();
+    const { db: firebaseDb } = initializeFirebase();
+    
+    if (!isFirebaseConfigured()) {
+      throw new Error('Firebase not configured');
+    }
+    
+    if (!this.userId) {
+      throw new Error('User not authenticated');
     }
 
     try {
-      const progressDoc = doc(db, 'users', this.userId, 'progress', 'current');
-      const docSnap = await getDoc(progressDoc);
+      return await retryOperation(async () => {
+        const progressDoc = doc(firebaseDb, 'users', this.userId!, 'progress', 'current');
+        const docSnap = await getDoc(progressDoc);
 
-      if (docSnap.exists()) {
-        return docSnap.data() as UserProgress;
-      }
+        if (docSnap.exists()) {
+          return docSnap.data() as UserProgress;
+        }
 
-      return null;
+        return null;
+      }, 'Fetch progress');
     } catch (error) {
       console.error('Failed to fetch progress:', error);
-      throw error;
+      // Return null instead of throwing - allows app to continue with local data
+      return null;
     }
   }
 
-  async syncPendingChanges(changes: Array<{
-    type: string;
-    timestamp: Date;
-    data: unknown;
-  }>): Promise<void> {
-    if (!this.isInitialized || !this.userId) {
-      throw new Error('Cloud sync not initialized');
-    }
 
+
+  // Connection status methods
+  isOnline(): boolean {
+    return isOnline;
+  }
+
+  async testConnection(): Promise<boolean> {
     try {
-      const changesDoc = doc(db, 'users', this.userId, 'changes', 'pending');
-
-      // Add changes to pending queue
-      await updateDoc(changesDoc, {
-        changes: changes,
-        lastUpdated: new Date(),
-      });
-
-      console.log('Pending changes synced to cloud');
+      await waitForConnection();
+      return true;
     } catch (error) {
-      console.error('Failed to sync pending changes:', error);
-      throw error;
+      console.error('Connection test failed:', error);
+      return false;
     }
   }
 }

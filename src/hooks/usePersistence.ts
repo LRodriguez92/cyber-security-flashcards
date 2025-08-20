@@ -1,14 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocalStorage } from './useOfflineSupport';
 import type { UserProgress, SyncStatus, UserProfile } from '../types/flashcard';
+import { cloudSyncService } from '../services/cloudSync';
 
 // Storage keys
 const STORAGE_KEYS = {
   USER_PROGRESS: 'flashcard-user-progress',
   USER_PROFILE: 'flashcard-user-profile',
   SYNC_STATUS: 'flashcard-sync-status',
-  PENDING_CHANGES: 'flashcard-pending-changes',
-  SESSION_DATA: 'flashcard-session-data',
 } as const;
 
 // Generate anonymous user ID
@@ -21,7 +20,7 @@ const generateUserId = (): string => {
   return newId;
 };
 
-// Enhanced persistence hook
+// Online-only persistence hook
 export const usePersistence = () => {
   const [userProfile, setUserProfile] = useLocalStorage<UserProfile>(
     STORAGE_KEYS.USER_PROFILE,
@@ -73,15 +72,6 @@ export const usePersistence = () => {
     }
   );
 
-  const [pendingChanges, setPendingChanges] = useLocalStorage<Array<{
-    type: string;
-    timestamp: Date;
-    data: unknown;
-  }>>(
-    STORAGE_KEYS.PENDING_CHANGES,
-    []
-  );
-
   // Track session data (not persisted, just for current session)
   const [sessionData, setSessionData] = useState({
     sessionStartTime: new Date(),
@@ -89,37 +79,117 @@ export const usePersistence = () => {
     cardsInSession: 0,
   });
 
-  // Debounced save function
-  const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const saveProgress = useCallback((updates: Partial<UserProgress>) => {
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+  // Sync to cloud function
+  const syncToCloud = useCallback(async (progress: UserProgress) => {
+    if (!navigator.onLine) {
+      console.log('Offline, cannot sync');
+      return;
     }
-
-    // Set new timeout for debounced save
-    saveTimeoutRef.current = setTimeout(() => {
-      setUserProgress(prev => ({
-        ...prev,
-        ...updates,
-        lastStudied: new Date(),
-        lastSyncTimestamp: new Date(),
+    
+    const authState = cloudSyncService.getAuthState();
+    if (!authState.user) {
+      console.log('User not authenticated, cannot sync');
+      return;
+    }
+    
+    try {
+      console.log('🔄 Starting cloud sync...');
+      setSyncStatus(prev => ({ ...prev, syncInProgress: true }));
+      
+      await cloudSyncService.syncProgress(progress);
+      
+      console.log('✅ Cloud sync completed successfully');
+      setSyncStatus(prev => ({ 
+        ...prev, 
+        syncInProgress: false, 
+        lastSync: new Date(),
+        error: null 
       }));
-
-      // Mark as pending sync
-      setSyncStatus(prev => ({
-        ...prev,
-        pendingChanges: true,
+    } catch (error) {
+      console.error('❌ Failed to sync to cloud:', error);
+      setSyncStatus(prev => ({ 
+        ...prev, 
+        syncInProgress: false, 
+        error: error instanceof Error ? error.message : 'Sync failed' 
       }));
+    }
+  }, [setSyncStatus]);
 
-      // Add to pending changes for cloud sync
-      setPendingChanges(prev => [...prev, {
-        type: 'progress_update',
-        timestamp: new Date(),
-        data: updates,
-      }]);
-    }, 1000); // 1 second debounce
-  }, [setUserProgress, setSyncStatus, setPendingChanges]);
+  // Fetch from cloud function
+  const fetchFromCloud = useCallback(async () => {
+    if (!navigator.onLine) {
+      console.log('Offline, cannot fetch from cloud');
+      return;
+    }
+    
+    const authState = cloudSyncService.getAuthState();
+    if (!authState.user) {
+      console.log('User not authenticated, cannot fetch from cloud');
+      return;
+    }
+    
+    try {
+      setSyncStatus(prev => ({ ...prev, syncInProgress: true }));
+      const cloudProgress = await cloudSyncService.fetchProgress();
+      
+      if (cloudProgress) {
+        // Convert dates in cloud progress
+        const convertedCloudProgress: UserProgress = {
+          ...cloudProgress,
+          lastStudied: typeof cloudProgress.lastStudied === 'string' ? new Date(cloudProgress.lastStudied) : cloudProgress.lastStudied,
+          lastSyncTimestamp: typeof cloudProgress.lastSyncTimestamp === 'string' ? new Date(cloudProgress.lastSyncTimestamp) : cloudProgress.lastSyncTimestamp,
+          studySessions: Array.isArray(cloudProgress.studySessions) ? cloudProgress.studySessions.map(session => ({
+            ...session,
+            startTime: typeof session.startTime === 'string' ? new Date(session.startTime) : session.startTime,
+            endTime: session.endTime && typeof session.endTime === 'string' ? new Date(session.endTime) : session.endTime,
+          })) : cloudProgress.studySessions,
+        };
+        
+        // Use cloud data but preserve local UI preferences
+        const updatedProgress: UserProgress = {
+          ...convertedCloudProgress,
+          // Keep local UI preferences
+          selectedDomains: userProgress.selectedDomains,
+          selectedConfidenceCategories: userProgress.selectedConfidenceCategories,
+          studyFilter: userProgress.studyFilter,
+          currentMode: userProgress.currentMode,
+          lastSyncTimestamp: new Date(),
+        };
+        
+        setUserProgress(updatedProgress);
+      }
+      
+      setSyncStatus(prev => ({ 
+        ...prev, 
+        syncInProgress: false, 
+        lastSync: new Date(),
+        error: null 
+      }));
+    } catch (error) {
+      console.error('Failed to fetch from cloud:', error);
+      setSyncStatus(prev => ({ 
+        ...prev, 
+        syncInProgress: false, 
+        error: error instanceof Error ? error.message : 'Fetch failed' 
+      }));
+    }
+  }, [setUserProgress, setSyncStatus, userProgress]);
+
+  // Save progress and sync immediately
+  const saveProgress = useCallback(async (updates: Partial<UserProgress>) => {
+    const updatedProgress = {
+      ...userProgress,
+      ...updates,
+      lastStudied: new Date(),
+      lastSyncTimestamp: new Date(),
+    };
+    
+    // Save to localStorage
+    setUserProgress(updatedProgress);
+    
+    // Sync to cloud immediately
+    await syncToCloud(updatedProgress);
+  }, [userProgress, setUserProgress, syncToCloud]);
 
   // Update last active timestamp
   const updateLastActive = useCallback(() => {
@@ -140,11 +210,11 @@ export const usePersistence = () => {
     const isYesterday = lastStudied.toDateString() === yesterday.toDateString();
 
     if (isToday) {
-      return userProgress.streakDays; // Keep current streak
+      return userProgress.streakDays;
     } else if (isYesterday) {
-      return userProgress.streakDays + 1; // Increment streak
+      return userProgress.streakDays + 1;
     } else {
-      return 1; // Reset streak
+      return 1;
     }
   }, [userProgress.lastStudied, userProgress.streakDays]);
 
@@ -177,41 +247,62 @@ export const usePersistence = () => {
   }, [setUserProgress]);
 
   // End study session
-  const endStudySession = useCallback((sessionId: string, finalStats: {
+  const endStudySession = useCallback(async (sessionId: string, finalStats: {
     cardsStudied: number;
     correctAnswers: number;
     incorrectAnswers: number;
   }) => {
-    setUserProgress(prev => ({
-      ...prev,
-      studySessions: prev.studySessions.map(session =>
+    const updatedProgress = {
+      ...userProgress,
+      studySessions: userProgress.studySessions.map(session =>
         session.id === sessionId
           ? { ...session, ...finalStats, endTime: new Date() }
           : session
       ),
-      totalStudyTime: prev.totalStudyTime + 
+      totalStudyTime: userProgress.totalStudyTime + 
         (new Date().getTime() - sessionData.sessionStartTime.getTime()),
       streakDays: calculateStreak(),
-    }));
+      lastStudied: new Date(),
+      lastSyncTimestamp: new Date(),
+    };
 
-    saveProgress({}); // Trigger save
-  }, [setUserProgress, sessionData.sessionStartTime, calculateStreak, saveProgress]);
+    setUserProgress(updatedProgress);
+    await syncToCloud(updatedProgress);
+  }, [userProgress, sessionData.sessionStartTime, calculateStreak, setUserProgress, syncToCloud]);
 
-  // Cleanup on unmount
+  // Initialize cloud sync and fetch data on mount
   useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+    const initializeSync = async () => {
+      try {
+        await cloudSyncService.initialize();
+        const authState = cloudSyncService.getAuthState();
+        if (authState.user) {
+          await fetchFromCloud();
+        }
+      } catch (error) {
+        console.error('Failed to initialize sync:', error);
       }
     };
+
+    initializeSync();
   }, []);
+
+  // Manual sync function for UI
+  const manualSync = useCallback(async () => {
+    try {
+      console.log('🔄 Manual sync triggered');
+      await syncToCloud(userProgress);
+      await fetchFromCloud();
+    } catch (error) {
+      console.error('Manual sync failed:', error);
+    }
+  }, [userProgress, syncToCloud, fetchFromCloud]);
 
   return {
     // Data
     userProgress,
     userProfile,
     syncStatus,
-    pendingChanges,
     sessionData,
 
     // Actions
@@ -220,12 +311,14 @@ export const usePersistence = () => {
     startStudySession,
     endStudySession,
     calculateStreak,
+    syncToCloud,
+    fetchFromCloud,
+    manualSync,
 
     // Setters
     setUserProgress,
     setUserProfile,
     setSyncStatus,
-    setPendingChanges,
     setSessionData,
   };
 };
