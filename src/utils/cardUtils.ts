@@ -12,7 +12,11 @@ export const getFilteredCards = (
     ? flashcards 
     : flashcards.filter(card => selectedDomains.includes(card.domain));
 
-  if (currentMode === 'review' && selectedConfidenceCategories.length > 0) {
+  if (currentMode === 'review') {
+    if (selectedConfidenceCategories.length === 0) {
+      // No confidence categories selected in review mode - show no cards
+      return [];
+    }
     // Filter cards that are in the selected confidence categories
     return baseFiltered.filter((card, index) => {
       const cardId = `${card.domain}-${index}`;
