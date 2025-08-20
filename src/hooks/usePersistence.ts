@@ -19,8 +19,6 @@ export const usePersistence = () => {
 
   // Save progress to cloud
   const saveProgress = useCallback(async (updates: Partial<UserProgress>) => {
-    console.log('🔄 saveProgress called with updates:', updates);
-    
     try {
       if (!userProgress) {
         console.error('❌ User progress not initialized');
@@ -34,18 +32,12 @@ export const usePersistence = () => {
         lastSyncTimestamp: new Date(),
       };
       
-      console.log('📊 Setting updated progress:', updatedProgress);
       setUserProgress(updatedProgress);
       
       const authState = cloudSyncService.getAuthState();
-      console.log('🔐 Auth state:', authState);
       
       if (authState.user) {
-        console.log('☁️ Syncing to cloud...');
         await cloudSyncService.syncProgress(updatedProgress);
-        console.log('✅ Cloud sync completed');
-      } else {
-        console.log('⚠️ No authenticated user, skipping cloud sync');
       }
     } catch (err) {
       console.error('❌ Failed to save progress:', err);
@@ -61,12 +53,9 @@ export const usePersistence = () => {
       
       const authState = cloudSyncService.getAuthState();
       if (!authState.user) {
-        console.log('No authenticated user found');
         setIsLoading(false);
         return;
       }
-      
-      console.log('Loading progress for user:', authState.user.uid);
       
       // Load user profile
       const profile = await cloudSyncService.getUserProfile();
@@ -76,7 +65,6 @@ export const usePersistence = () => {
       
       const cloudProgress = await cloudSyncService.fetchProgress();
       if (cloudProgress) {
-        console.log('Found existing progress, loading...');
         // Convert dates in cloud progress
         const convertedCloudProgress: UserProgress = {
           ...cloudProgress,
@@ -91,7 +79,6 @@ export const usePersistence = () => {
         
         setUserProgress(convertedCloudProgress);
       } else {
-        console.log('No existing progress found, creating default...');
         // Create default progress for new user
         const defaultProgress: UserProgress = {
           userId: authState.user.uid,

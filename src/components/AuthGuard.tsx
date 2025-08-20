@@ -20,7 +20,6 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (authState.loading) {
-        console.log('AuthGuard: Loading timeout reached, forcing non-loading state');
         setAuthState(prev => ({
           ...prev,
           loading: false,
@@ -40,7 +39,6 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         
         // Then listen for auth state changes
         const unsubscribe = cloudSyncService.onAuthStateChanged((state) => {
-          console.log('AuthGuard: Auth state changed:', state);
           setAuthState(state);
           // Auto-show auth modal if user is not authenticated and not loading
           if (!state.loading && !state.user) {

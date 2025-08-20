@@ -32,7 +32,6 @@ let googleProvider: GoogleAuthProvider | null = null;
 
 const initializeFirebase = () => {
   if (!app) {
-    console.log('🔧 Checking Firebase configuration...');
     if (!isFirebaseConfigured()) {
       console.error('❌ Firebase configuration missing!');
       console.error('Missing environment variables:', {
@@ -47,30 +46,13 @@ const initializeFirebase = () => {
     }
     
     try {
-      // Log configuration for debugging (without sensitive data)
-      console.log('🔧 Initializing Firebase with config:', {
-        projectId: FIREBASE_CONFIG.projectId,
-        authDomain: FIREBASE_CONFIG.authDomain,
-        hasApiKey: !!FIREBASE_CONFIG.apiKey,
-        hasAppId: !!FIREBASE_CONFIG.appId
-      });
-      
       app = initializeApp(FIREBASE_CONFIG);
-      console.log('✅ Firebase app initialized');
       
       db = getFirestore(app);
-      console.log('✅ Firestore instance created');
       
       auth = getAuth(app);
-      console.log('✅ Auth instance created');
       
       googleProvider = new GoogleAuthProvider();
-      console.log('✅ Google provider created');
-      
-      // Test basic Firestore connectivity
-      if (db) {
-        console.log('🔍 Firestore database reference obtained');
-      }
       
     } catch (error) {
       console.error('❌ Firebase initialization failed:', error);
@@ -94,7 +76,6 @@ const initializeFirebase = () => {
     throw new Error('Firebase initialization incomplete');
   }
   
-  console.log('✅ Firebase initialization complete');
   return { app, db, auth, googleProvider };
 };
 
@@ -150,15 +131,11 @@ export class CloudSyncService {
 
   private async performInitialization(): Promise<void> {
     try {
-      console.log('🔧 Starting cloud sync initialization...');
-      
       // Initialize Firebase
       const { auth: firebaseAuth } = initializeFirebase();
-      console.log('✅ Firebase initialized, setting up auth listener...');
 
       // Listen for auth state changes
       onAuthStateChanged(firebaseAuth, (user) => {
-        console.log('🔄 Auth state changed:', user ? `User logged in (${user.uid})` : 'User logged out');
         this.userId = user?.uid || null;
         this.authState = {
           user,
@@ -166,17 +143,14 @@ export class CloudSyncService {
           error: null
         };
         this.notifyAuthStateListeners();
-        console.log('✅ Auth state updated and listeners notified');
       }, (error) => {
         // Handle auth state change errors
-        console.error('❌ Auth state change error:', error);
         this.authState.error = error.message;
         this.authState.loading = false;
         this.notifyAuthStateListeners();
       });
 
       this.isInitialized = true;
-      console.log('✅ Cloud sync initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize cloud sync:', error);
       this.authState.error = error instanceof Error ? error.message : 'Unknown error';
@@ -408,8 +382,6 @@ export class CloudSyncService {
   }
 
   async syncProgress(progress: UserProgress): Promise<void> {
-    console.log('☁️ CloudSyncService.syncProgress called for user:', this.userId);
-    
     await this.ensureInitialized();
     const { db: firebaseDb } = initializeFirebase();
     
@@ -425,7 +397,6 @@ export class CloudSyncService {
 
     try {
       const progressDoc = doc(firebaseDb, 'users', this.userId!, 'progress', 'current');
-      console.log('📄 Writing to Firestore document:', `users/${this.userId}/progress/current`);
 
       // Update progress
       await setDoc(progressDoc, {
@@ -434,7 +405,6 @@ export class CloudSyncService {
         version: '1.0.0',
       }, { merge: true });
 
-      console.log('✅ Progress synced to cloud successfully');
     } catch (error) {
       console.error('❌ Failed to sync progress:', error);
       // Don't throw error for sync failures - let the app continue working offline

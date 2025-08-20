@@ -27,15 +27,11 @@ export const useFlashcardState = () => {
 
   // Enhanced markConfidence with persistence
   const markConfidence = useCallback(async (confidenceLevel: string, currentCardData: Flashcard | undefined) => {
-    console.log('🎯 markConfidence called:', { confidenceLevel, currentCardData, userProgress: !!userProgress });
-    
     if (!userProgress || !currentCardData) {
-      console.log('❌ markConfidence early return:', { hasUserProgress: !!userProgress, hasCurrentCardData: !!currentCardData });
       return;
     }
     
     const cardId = `${currentCardData.domain}-${currentCard}`;
-    console.log('📝 Processing card:', cardId);
     
     // Update confidence tracking
     const newConfidenceTracking = {
@@ -64,19 +60,11 @@ export const useFlashcardState = () => {
     }
 
     // Save progress and sync to cloud
-    console.log('💾 Saving progress to cloud:', {
-      confidenceTracking: newConfidenceTracking,
-      score: newScore,
-      completedCards: newCompletedCards,
-    });
-    
     await saveProgress({
       confidenceTracking: newConfidenceTracking,
       score: newScore,
       completedCards: newCompletedCards,
     });
-    
-    console.log('✅ Progress saved successfully');
 
     // Update session data
     setSessionData((prev: { sessionStartTime: Date; currentSessionId: string; cardsInSession: number }) => ({
