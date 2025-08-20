@@ -106,15 +106,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
             <img
               src={authState.user.photoURL}
               alt={displayName}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover"
             />
           ) : (
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-xs sm:text-sm">
               {displayName.charAt(0).toUpperCase()}
             </div>
           )}
           {isAnonymous && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white" />
+            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-yellow-400 rounded-full border-2 border-white" />
           )}
         </div>
         
@@ -139,10 +139,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onSignOut }) => {
                   <img
                     src={authState.user.photoURL}
                     alt={displayName}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm sm:text-base">
                     {displayName.charAt(0).toUpperCase()}
                   </div>
                 )}
