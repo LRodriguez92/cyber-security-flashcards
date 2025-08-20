@@ -7,10 +7,6 @@ export const useFlashcardState = () => {
     userProgress,
     saveProgress,
     updateLastActive,
-    startStudySession,
-    endStudySession,
-    sessionData,
-    setSessionData,
   } = usePersistence();
 
   // Local state (not persisted)
@@ -48,34 +44,13 @@ export const useFlashcardState = () => {
       cardId
     ];
 
-    // Update score
-    const isCorrect = confidenceLevel !== 'peeked';
-    const newScore = {
-      ...userProgress.score,
-      [isCorrect ? 'correct' : 'incorrect']: userProgress.score[isCorrect ? 'correct' : 'incorrect'] + 1
-    };
-
-    // Update completed cards
-    const newCompletedCards = [...userProgress.completedCards];
-    if (!newCompletedCards.includes(cardId)) {
-      newCompletedCards.push(cardId);
-    }
-
     // Save progress and sync to cloud
     await saveProgress({
       confidenceTracking: newConfidenceTracking,
-      score: newScore,
-      completedCards: newCompletedCards,
     });
 
-    // Update session data
-    setSessionData((prev: { sessionStartTime: Date; currentSessionId: string; cardsInSession: number }) => ({
-      ...prev,
-      cardsInSession: prev.cardsInSession + 1,
-    }));
-
     setAnswered(true);
-  }, [userProgress, answered, currentCard, saveProgress, setSessionData]);
+  }, [userProgress, saveProgress]);
 
   // Enhanced reset functions
   const resetState = useCallback(async () => {
@@ -87,15 +62,6 @@ export const useFlashcardState = () => {
     setIsShuffled(false);
     setShuffledIndices([]);
 
-    // End current session if exists
-    if (sessionData.currentSessionId) {
-      await endStudySession(sessionData.currentSessionId, {
-        cardsStudied: sessionData.cardsInSession,
-        correctAnswers: userProgress.score.correct,
-        incorrectAnswers: userProgress.score.incorrect,
-      });
-    }
-
     // Reset progress and sync to cloud
     await saveProgress({
       confidenceTracking: {
@@ -104,27 +70,13 @@ export const useFlashcardState = () => {
         'long-think': [],
         'peeked': []
       },
-      score: { correct: 0, incorrect: 0 },
-      completedCards: [],
     });
-  }, [userProgress, saveProgress, endStudySession, sessionData]);
+  }, [userProgress, saveProgress]);
 
-  // Enhanced mode switching with session management
+  // Enhanced mode switching
   const switchMode = useCallback(async (mode: StudyMode) => {
     if (!userProgress) return;
     
-    // End current session
-    if (sessionData.currentSessionId) {
-      await endStudySession(sessionData.currentSessionId, {
-        cardsStudied: sessionData.cardsInSession,
-        correctAnswers: userProgress.score.correct,
-        incorrectAnswers: userProgress.score.incorrect,
-      });
-    }
-
-    // Start new session
-    startStudySession(mode, userProgress.selectedDomains);
-
     // Reset local state
     setCurrentCard(0);
     setIsFlipped(false);
@@ -134,7 +86,7 @@ export const useFlashcardState = () => {
 
     // Update local mode state (not persisted)
     setCurrentMode(mode);
-  }, [userProgress, endStudySession, startStudySession, sessionData]);
+  }, [userProgress]);
 
   const nextCard = useCallback(() => {
     setCurrentCard(prev => prev + 1);
@@ -225,7 +177,6 @@ export const useFlashcardState = () => {
   if (!userProgress) {
     return {
       // Default state values
-      score: { correct: 0, incorrect: 0 },
       selectedDomains: ['all'],
       confidenceTracking: {
         'knew-it': [],
@@ -271,7 +222,6 @@ export const useFlashcardState = () => {
 
   return {
     // State from persistence
-    score: userProgress.score,
     selectedDomains: userProgress.selectedDomains,
     confidenceTracking: userProgress.confidenceTracking,
     currentMode,

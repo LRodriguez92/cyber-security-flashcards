@@ -45,15 +45,9 @@ export interface CardColors {
 export interface UserProgress {
   userId: string;
   confidenceTracking: ConfidenceTracking;
-  score: Score;
   selectedDomains: string[];
   selectedConfidenceCategories: string[];
   studyFilter: 'all' | 'unanswered';
-  lastStudied: Date;
-  streakDays: number;
-  completedCards: string[]; // Card IDs that have been answered
-  studySessions: StudySession[];
-  lastSyncTimestamp: Date;
   version: string; // For data migration
 }
 

@@ -28,12 +28,10 @@ export const usePersistence = () => {
       const updatedProgress: UserProgress = {
         ...userProgress,
         ...updates,
-        lastStudied: new Date(),
-        lastSyncTimestamp: new Date(),
       };
       
       // Validate that all required fields are present and not undefined
-      if (!updatedProgress.userId || !updatedProgress.confidenceTracking || !updatedProgress.score) {
+      if (!updatedProgress.userId || !updatedProgress.confidenceTracking) {
         console.error('❌ Invalid progress data:', updatedProgress);
         throw new Error('Invalid progress data');
       }
@@ -71,16 +69,14 @@ export const usePersistence = () => {
       
       const cloudProgress = await cloudSyncService.fetchProgress();
       if (cloudProgress) {
-        // Convert dates in cloud progress
+        // Convert cloud progress to current format
         const convertedCloudProgress: UserProgress = {
-          ...cloudProgress,
-          lastStudied: typeof cloudProgress.lastStudied === 'string' ? new Date(cloudProgress.lastStudied) : cloudProgress.lastStudied,
-          lastSyncTimestamp: typeof cloudProgress.lastSyncTimestamp === 'string' ? new Date(cloudProgress.lastSyncTimestamp) : cloudProgress.lastSyncTimestamp,
-          studySessions: Array.isArray(cloudProgress.studySessions) ? cloudProgress.studySessions.map(session => ({
-            ...session,
-            startTime: typeof session.startTime === 'string' ? new Date(session.startTime) : session.startTime,
-            endTime: session.endTime && typeof session.endTime === 'string' ? new Date(session.endTime) : session.endTime,
-          })) : cloudProgress.studySessions,
+          userId: cloudProgress.userId,
+          confidenceTracking: cloudProgress.confidenceTracking,
+          selectedDomains: cloudProgress.selectedDomains,
+          selectedConfidenceCategories: cloudProgress.selectedConfidenceCategories,
+          studyFilter: cloudProgress.studyFilter,
+          version: cloudProgress.version,
         };
         
         setUserProgress(convertedCloudProgress);
@@ -94,15 +90,9 @@ export const usePersistence = () => {
             'long-think': [],
             'peeked': [],
           },
-          score: { correct: 0, incorrect: 0 },
           selectedDomains: ['all'],
           selectedConfidenceCategories: [],
           studyFilter: 'all',
-          lastStudied: new Date(),
-          streakDays: 0,
-          completedCards: [],
-          studySessions: [],
-          lastSyncTimestamp: new Date(),
           version: '1.0.0',
         };
         setUserProgress(defaultProgress);
@@ -127,94 +117,7 @@ export const usePersistence = () => {
     });
   }, []);
 
-  // Calculate study streak
-  const calculateStreak = useCallback(() => {
-    if (!userProgress) return 0;
-    
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
 
-    const lastStudied = new Date(userProgress.lastStudied);
-    const isToday = lastStudied.toDateString() === today.toDateString();
-    const isYesterday = lastStudied.toDateString() === yesterday.toDateString();
-
-    if (isToday) {
-      return userProgress.streakDays;
-    } else if (isYesterday) {
-      return userProgress.streakDays + 1;
-    } else {
-      return 1;
-    }
-  }, [userProgress]);
-
-  // Start new study session
-  const startStudySession = useCallback((mode: 'study' | 'review', domains: string[]) => {
-    if (!userProgress) return null;
-    
-    const sessionId = `session_${Date.now()}`;
-    const newSession = {
-      id: sessionId,
-      startTime: new Date(),
-      cardsStudied: 0,
-      correctAnswers: 0,
-      incorrectAnswers: 0,
-      domains,
-      mode,
-    };
-
-    setUserProgress(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        studySessions: [...prev.studySessions, newSession],
-      };
-    });
-
-    setSessionData(prev => ({
-      ...prev,
-      sessionStartTime: new Date(),
-      currentSessionId: sessionId,
-      cardsInSession: 0,
-    }));
-
-    return sessionId;
-  }, [userProgress]);
-
-  // End study session
-  const endStudySession = useCallback(async (sessionId: string, finalStats: {
-    cardsStudied: number;
-    correctAnswers: number;
-    incorrectAnswers: number;
-  }) => {
-    try {
-      if (!userProgress) {
-        throw new Error('User progress not initialized');
-      }
-      
-      const updatedProgress: UserProgress = {
-        ...userProgress,
-        studySessions: userProgress.studySessions.map(session =>
-          session.id === sessionId
-            ? { ...session, ...finalStats, endTime: new Date() }
-            : session
-        ),
-        streakDays: calculateStreak(),
-        lastStudied: new Date(),
-        lastSyncTimestamp: new Date(),
-      };
-
-      setUserProgress(updatedProgress);
-      
-      const authState = cloudSyncService.getAuthState();
-      if (authState.user) {
-        await cloudSyncService.syncProgress(updatedProgress);
-      }
-    } catch (err) {
-      console.error('Failed to end study session:', err);
-      setError(err instanceof Error ? err.message : 'Failed to end study session');
-    }
-  }, [userProgress, calculateStreak]);
 
   // Initialize cloud sync and load data on mount
   useEffect(() => {
@@ -264,9 +167,6 @@ export const usePersistence = () => {
     saveProgress,
     loadProgress,
     updateLastActive,
-    startStudySession,
-    endStudySession,
-    calculateStreak,
 
     // Setters
     setUserProgress,

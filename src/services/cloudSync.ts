@@ -407,15 +407,9 @@ export class CloudSyncService {
           'long-think': [],
           'peeked': [],
         },
-        score: progress.score || { correct: 0, incorrect: 0 },
         selectedDomains: progress.selectedDomains || ['all'],
         selectedConfidenceCategories: progress.selectedConfidenceCategories || [],
         studyFilter: progress.studyFilter || 'all',
-        lastStudied: progress.lastStudied || new Date(),
-        streakDays: progress.streakDays || 0,
-        completedCards: progress.completedCards || [],
-        studySessions: progress.studySessions || [],
-        lastSyncTimestamp: new Date(),
         version: '1.0.0',
       };
 
