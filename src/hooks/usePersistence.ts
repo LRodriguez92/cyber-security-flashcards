@@ -92,7 +92,6 @@ export const usePersistence = () => {
           selectedDomains: ['all'],
           selectedConfidenceCategories: [],
           studyFilter: 'all',
-          currentMode: 'study',
           lastStudied: new Date(),
           totalStudyTime: 0,
           streakDays: 0,

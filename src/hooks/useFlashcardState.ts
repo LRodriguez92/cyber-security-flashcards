@@ -19,6 +19,7 @@ export const useFlashcardState = () => {
   const [answered, setAnswered] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
+  const [currentMode, setCurrentMode] = useState<StudyMode>('study');
 
   // Update last active on user interaction
   useEffect(() => {
@@ -130,9 +131,9 @@ export const useFlashcardState = () => {
     setIsShuffled(false);
     setShuffledIndices([]);
 
-    // Update mode
-    await saveProgress({ currentMode: mode });
-  }, [userProgress, saveProgress, endStudySession, startStudySession, sessionData]);
+    // Update local mode state (not persisted)
+    setCurrentMode(mode);
+  }, [userProgress, endStudySession, startStudySession, sessionData]);
 
   const nextCard = useCallback(() => {
     setCurrentCard(prev => prev + 1);
@@ -231,7 +232,7 @@ export const useFlashcardState = () => {
         'long-think': [],
         'peeked': [],
       },
-      currentMode: 'study' as const,
+      currentMode,
       selectedConfidenceCategories: [],
       studyFilter: 'all' as const,
       currentCard,
@@ -272,7 +273,7 @@ export const useFlashcardState = () => {
     score: userProgress.score,
     selectedDomains: userProgress.selectedDomains,
     confidenceTracking: userProgress.confidenceTracking,
-    currentMode: userProgress.currentMode,
+    currentMode,
     selectedConfidenceCategories: userProgress.selectedConfidenceCategories,
     studyFilter: userProgress.studyFilter,
 

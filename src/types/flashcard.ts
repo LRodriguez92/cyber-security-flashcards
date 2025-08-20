@@ -48,7 +48,6 @@ export interface UserProgress {
   selectedDomains: string[];
   selectedConfidenceCategories: string[];
   studyFilter: 'all' | 'unanswered';
-  currentMode: StudyMode;
   lastStudied: Date;
   totalStudyTime: number;
   streakDays: number;
