@@ -3,6 +3,7 @@ import type { Flashcard, Domain, ConfidenceCategory } from '../types/flashcard';
 export const flashcards: Flashcard[] = [
   // Blue - General Security Concepts (Domain 1)
   {
+    id: "1",
     question: "What does CIA stand for in cybersecurity?",
     answer: "Confidentiality, Integrity, and Availability - the three fundamental principles of information security.",
     domain: "General Security Concepts",
@@ -11,6 +12,7 @@ export const flashcards: Flashcard[] = [
     color: "blue"
   },
   {
+    id: "2",
     question: "What is the AAA framework?",
     answer: "Authentication, Authorization, and Accounting - a framework for controlling access to resources and tracking user activities.",
     domain: "General Security Concepts",
@@ -19,6 +21,7 @@ export const flashcards: Flashcard[] = [
     color: "blue"
   },
   {
+    id: "3",
     question: "What is Zero Trust security?",
     answer: "A security model that assumes no implicit trust and requires verification for every user and device trying to access resources.",
     domain: "General Security Concepts",
@@ -27,6 +30,7 @@ export const flashcards: Flashcard[] = [
     color: "blue"
   },
   {
+    id: "4",
     question: "What are the three main security control types?",
     answer: "Administrative (policies/procedures), Technical (firewalls/encryption), and Physical (locks/cameras) controls.",
     domain: "General Security Concepts",
@@ -37,6 +41,7 @@ export const flashcards: Flashcard[] = [
   
   // Red - Threats, Vulnerabilities & Mitigations (Domain 2)
   {
+    id: "5",
     question: "What is phishing?",
     answer: "A social engineering attack where attackers impersonate legitimate entities to steal sensitive information like passwords or credit card numbers.",
     domain: "Threats, Vulnerabilities & Mitigations",
@@ -45,6 +50,7 @@ export const flashcards: Flashcard[] = [
     color: "red"
   },
   {
+    id: "6",
     question: "What is malware?",
     answer: "Malicious software designed to harm, exploit, or gain unauthorized access to computer systems. Includes viruses, worms, trojans, ransomware, and spyware.",
     domain: "Threats, Vulnerabilities & Mitigations",
@@ -53,6 +59,7 @@ export const flashcards: Flashcard[] = [
     color: "red"
   },
   {
+    id: "7",
     question: "What is ransomware?",
     answer: "A type of malware that encrypts a victim's files and demands payment (ransom) for the decryption key to restore access to the data.",
     domain: "Threats, Vulnerabilities & Mitigations",
@@ -61,6 +68,7 @@ export const flashcards: Flashcard[] = [
     color: "red"
   },
   {
+    id: "8",
     question: "What are the main threat actor motivations?",
     answer: "Financial gain, espionage, ideology/hacktivism, revenge, and state-sponsored activities.",
     domain: "Threats, Vulnerabilities & Mitigations",
@@ -69,6 +77,7 @@ export const flashcards: Flashcard[] = [
     color: "red"
   },
   {
+    id: "9",
     question: "What is a zero-day exploit?",
     answer: "An attack that exploits a previously unknown vulnerability in software before developers have created and distributed a patch for it.",
     domain: "Threats, Vulnerabilities & Mitigations",
@@ -79,6 +88,7 @@ export const flashcards: Flashcard[] = [
   
   // Green - Security Architecture (Domain 3)
   {
+    id: "10",
     question: "What is a VPN?",
     answer: "Virtual Private Network - creates a secure, encrypted connection over a less secure network, allowing users to access private networks remotely.",
     domain: "Security Architecture",
@@ -87,6 +97,7 @@ export const flashcards: Flashcard[] = [
     color: "green"
   },
   {
+    id: "11",
     question: "What is network segmentation?",
     answer: "The practice of dividing a network into smaller, isolated segments to limit the scope of security breaches and improve performance.",
     domain: "Security Architecture",
@@ -95,6 +106,7 @@ export const flashcards: Flashcard[] = [
     color: "green"
   },
   {
+    id: "12",
     question: "What is TLS?",
     answer: "Transport Layer Security - a cryptographic protocol that provides secure communication over networks by encrypting data in transit.",
     domain: "Security Architecture",
@@ -103,6 +115,7 @@ export const flashcards: Flashcard[] = [
     color: "green"
   },
   {
+    id: "13",
     question: "What are the main cloud service models?",
     answer: "Infrastructure as a Service (IaaS), Platform as a Service (PaaS), and Software as a Service (SaaS).",
     domain: "Security Architecture",
@@ -113,6 +126,7 @@ export const flashcards: Flashcard[] = [
   
   // Yellow - Security Operations (Domain 4)
   {
+    id: "14",
     question: "What is SIEM?",
     answer: "Security Information and Event Management - a solution that provides real-time analysis of security alerts and logs from various sources.",
     domain: "Security Operations",
@@ -121,6 +135,7 @@ export const flashcards: Flashcard[] = [
     color: "yellow"
   },
   {
+    id: "15",
     question: "What is system hardening?",
     answer: "The process of securing a system by reducing vulnerabilities, disabling unnecessary services, and implementing security configurations.",
     domain: "Security Operations",
@@ -129,6 +144,7 @@ export const flashcards: Flashcard[] = [
     color: "yellow"
   },
   {
+    id: "16",
     question: "What are the main incident response steps?",
     answer: "Preparation, Identification, Containment, Eradication, Recovery, and Lessons Learned.",
     domain: "Security Operations",
@@ -139,6 +155,7 @@ export const flashcards: Flashcard[] = [
   
   // White - Program Management & Oversight (Domain 5)
   {
+    id: "17",
     question: "What is an AUP?",
     answer: "Acceptable Use Policy - a document that outlines the permitted and prohibited uses of an organization's IT resources.",
     domain: "Program Management & Oversight",
@@ -147,6 +164,7 @@ export const flashcards: Flashcard[] = [
     color: "white"
   },
   {
+    id: "18",
     question: "What is risk management?",
     answer: "The process of identifying, assessing, and mitigating risks to an organization's assets, operations, and reputation.",
     domain: "Program Management & Oversight",
@@ -155,6 +173,7 @@ export const flashcards: Flashcard[] = [
     color: "white"
   },
   {
+    id: "19",
     question: "What does RTO stand for?",
     answer: "Recovery Time Objective - the maximum acceptable time to restore a system or process after a disruption.",
     domain: "Program Management & Oversight",

@@ -32,7 +32,8 @@ export const useFlashcardState = () => {
       return;
     }
     
-    const cardId = `${currentCardData.domain}-${currentCard}`;
+    // Use the card's unique id instead of constructing one
+    const cardId = currentCardData.id;
     
     // Update confidence tracking
     const newConfidenceTracking = {
