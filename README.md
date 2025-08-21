@@ -17,7 +17,6 @@ An interactive flashcard application for studying cybersecurity concepts. This R
 - **User Authentication**: Sign in with email/password, Google, or continue as guest
 - **Progress Synchronization**: Your progress is automatically synced across devices
 - **Confidence Pile Consistency**: Your confidence ratings are synchronized between all your devices
-- **Offline Support**: Continue studying even without an internet connection
 - **User Profiles**: Manage your account and preferences
 
 ## Cybersecurity Domains
@@ -73,7 +72,6 @@ The app automatically synchronizes your progress across all devices:
 
 - **Automatic Sync**: Changes are automatically synced to the cloud when you rate your confidence
 - **Cross-Device Consistency**: Your confidence piles remain consistent between devices
-- **Offline Support**: Changes made offline are queued and synced when you're back online
 - **Manual Sync**: Use the "Sync Data" button in your profile menu to manually trigger synchronization
 - **Sync Status**: Visual indicators show when data is being synced or if there are any issues
 
